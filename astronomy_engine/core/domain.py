@@ -115,14 +115,14 @@ class ObservationScore:
 class CelestialEvent:
     """Metadata for a named celestial event."""
 
-    event_id: Optional[str]
     name: str
     category: str
-    event_type: Optional[str] = None
-    description: Optional[str] = None
     start_time: datetime
     end_time: Optional[datetime] = None
+    event_type: Optional[str] = None
+    description: Optional[str] = None
     visibility_window: Optional[VisibilityWindow] = None
     visible_objects: Optional[List[str]] = None
     magnitude: Optional[float] = None
     location: Optional[Location] = None
+    event_id: Optional[str] = None

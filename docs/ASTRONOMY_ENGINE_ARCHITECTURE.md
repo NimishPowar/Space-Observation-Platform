@@ -44,7 +44,7 @@ Responsibilities:
 
 Public interface:
 - `get_moon_phase(context: ObservationContext) -> MoonPhase`
-- `get_lunar_visibility(context: ObservationContext) -> MoonPhase`
+- `get_lunar_visibility(context: ObservationContext) -> MoonVisibility`
 
 ### Planet Service
 
@@ -101,6 +101,12 @@ ensures the engine remains framework-agnostic.
 
 Skyfield must be contained entirely within the astronomy engine's adapter layer.
 Concrete adapters will implement an abstract `SkyfieldAdapter` interface.
+
+The engine should use adapter-backed service implementations so that service
+classes remain decoupled from lower-level astronomy sources.
+A `StubSkyfieldAdapter` can be used during initial development or testing
+before actual Skyfield integration is implemented.
+A runtime Skyfield adapter handles ephemeris loading and observer transformations.
 
 The rest of the project should only depend on:
 

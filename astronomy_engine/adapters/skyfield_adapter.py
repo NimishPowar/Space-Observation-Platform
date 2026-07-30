@@ -21,11 +21,21 @@ class SkyfieldAdapter(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_body_state(self, body_name: str, context: ObservationContext) -> object:
-        """Return raw Skyfield state data for a named celestial body."""
+    def get_planet_state(self, planet_name: str, context: ObservationContext) -> object:
+        """Return raw skyfield state data for a named planet."""
         raise NotImplementedError
 
     @abstractmethod
-    def get_solar_state(self, context: ObservationContext) -> object:
-        """Return raw Solar state data for the requested context."""
+    def get_moon_state(self, context: ObservationContext) -> object:
+        """Return raw skyfield state data for the Moon."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_sun_state(self, context: ObservationContext) -> object:
+        """Return raw skyfield state data for the Sun."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_rise_set(self, body_name: str, context: ObservationContext) -> object:
+        """Return raw rise/set state data for a celestial body."""
         raise NotImplementedError
