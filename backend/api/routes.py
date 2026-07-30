@@ -1,0 +1,136 @@
+"""API routes for astronomy endpoints."""
+
+from __future__ import annotations
+
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
+
+from fastapi import APIRouter, HTTPException, Query, Depends
+
+from astronomy_engine.core.domain import Location, ObservationContext
+from backend.use_cases.astronomy_use_case import AstronomyUseCase
+from backend.schemas.models import (
+    MoonResponse,
+    PlanetPositionResponse,
+    VisibilityWindowResponse,
+    CelestialEventResponse,
+    SolarStateResponse,
+)
+from backend.api.dependencies import get_astronomy_use_case
+
+router = APIRouter()
+
+
+def _parse_timestamp(ts: Optional[str]) -> datetime:
+    if ts is None:
+        return datetime.now(timezone.utc)
+    try:
+        dt = datetime.fromisoformat(ts)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Invalid timestamp: {exc}")
+
+
+def _build_context(
+    latitude: float,
+    longitude: float,
+    timestamp: Optional[str] = None,
+    elevation: Optional[float] = None,
+    targets: Optional[List[str]] = None,
+) -> ObservationContext:
+    location = Location(latitude=latitude, longitude=longitude, elevation_meters=elevation)
+    ts = _parse_timestamp(timestamp)
+    return ObservationContext(location=location, timestamp=ts, timezone=str(ts.tzinfo), target_objects=targets)
+
+
+def _serialize(obj: Any) -> Any:
+    """Serialize domain models to JSON-friendly structures."""
+    # handle dataclasses-like objects
+    from dataclasses import is_dataclass, asdict
+
+    if obj is None:
+        return None
+    if is_dataclass(obj):
+        d = asdict(obj)
+        for k, v in d.items():
+            if isinstance(v, datetime):
+                d[k] = v.isoformat()
+        return d
+    if isinstance(obj, list):
+        return [_serialize(i) for i in obj]
+    if isinstance(obj, dict):
+        return {k: _serialize(v) for k, v in obj.items()}
+    return obj
+
+
+@router.get("/moon", response_model=MoonResponse)
+def get_moon(
+    latitude: float,
+    longitude: float,
+    timestamp: Optional[str] = None,
+    elevation: Optional[float] = None,
+    use_case: AstronomyUseCase = Depends(get_astronomy_use_case),
+):
+    context = _build_context(latitude, longitude, timestamp, elevation)
+    moon = use_case.get_moon_summary(context)
+    return _serialize(moon)
+
+
+@router.get("/planets", response_model=List[PlanetPositionResponse])
+def get_planets(
+    latitude: float,
+    longitude: float,
+    timestamp: Optional[str] = None,
+    elevation: Optional[float] = None,
+    names: Optional[List[str]] = Query(None),
+    use_case: AstronomyUseCase = Depends(get_astronomy_use_case),
+):
+    context = _build_context(latitude, longitude, timestamp, elevation, names)
+    planets = use_case.get_planetary_positions(context)
+    return _serialize(planets)
+
+
+@router.get("/visibility", response_model=List[VisibilityWindowResponse])
+def get_visibility(
+    latitude: float,
+    longitude: float,
+    timestamp: Optional[str] = None,
+    elevation: Optional[float] = None,
+    names: Optional[List[str]] = Query(None),
+    use_case: AstronomyUseCase = Depends(get_astronomy_use_case),
+):
+    context = _build_context(latitude, longitude, timestamp, elevation, names)
+    windows = use_case.get_visibility_windows(context, names)
+    return _serialize(windows)
+
+
+@router.get("/sun", response_model=SolarStateResponse)
+def get_sun(
+    latitude: float,
+    longitude: float,
+    timestamp: Optional[str] = None,
+    elevation: Optional[float] = None,
+    use_case: AstronomyUseCase = Depends(get_astronomy_use_case),
+):
+    context = _build_context(latitude, longitude, timestamp, elevation)
+    solar = use_case.get_solar_summary(context)
+    return _serialize(solar)
+
+
+@router.get("/events", response_model=List[CelestialEventResponse])
+def get_events(
+    latitude: float,
+    longitude: float,
+    timestamp: Optional[str] = None,
+    use_case: AstronomyUseCase = Depends(get_astronomy_use_case),
+):
+    # For now return empty list — events are stored in DB in later phases
+    return []
+
+
+@router.get("/learn/{object_name}")
+def get_learn(object_name: str):
+    # Placeholder: educational content served from DB in later phases
+    return {"object": object_name, "content": "Not implemented yet"}

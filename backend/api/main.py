@@ -8,15 +8,14 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 
-from astronomy_engine.core.engine import AstronomyEngine
+from backend.api.routes import router
 
 
-def create_app(engine: AstronomyEngine) -> FastAPI:
-    """Create an application instance with engine integration.
-
-    The application is intentionally lightweight and does not define any
-    endpoints in this phase.
-    """
+def create_app() -> FastAPI:
+    """Create an application instance and register API routes."""
     app = FastAPI(title="Space Observation Intelligence Platform API")
-    app.state.engine = engine
+    app.include_router(router, prefix="/api")
     return app
+
+
+app = create_app()
