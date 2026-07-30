@@ -1,0 +1,38 @@
+[project]
+name = "space-observation-intelligence-platform"
+version = "0.1.0"
+description = "A modular platform for astronomy exploration, observation planning, learning, and analytics."
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [
+  {name = "Space Observation Platform Team"}
+]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Intended Audience :: Developers",
+  "Topic :: Scientific/Engineering :: Astronomy",
+  "Programming Language :: Python :: 3.11",
+  "License :: OSI Approved :: MIT License"
+]
+dependencies = [
+  "fastapi>=0.111.1",
+  "uvicorn>=0.23.0",
+  "streamlit>=1.25.0",
+  "skyfield>=1.48",
+  "pandas>=2.0",
+  "plotly>=5.20",
+  "sqlalchemy>=2.0",
+  "psycopg[binary]>=3.1"
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0",
+  "black>=24.0",
+  "ruff>=0.0.286"
+]
+
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
