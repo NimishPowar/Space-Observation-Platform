@@ -15,8 +15,11 @@ from backend.schemas.models import (
     VisibilityWindowResponse,
     CelestialEventResponse,
     SolarStateResponse,
+    LearnResponse,
 )
-from backend.api.dependencies import get_astronomy_use_case
+from backend.api.dependencies import get_astronomy_use_case, get_events_use_case, get_learn_use_case
+from backend.use_cases.events_use_case import EventsUseCase
+from backend.use_cases.learn_use_case import LearnUseCase
 
 router = APIRouter()
 
@@ -124,13 +127,23 @@ def get_events(
     latitude: float,
     longitude: float,
     timestamp: Optional[str] = None,
-    use_case: AstronomyUseCase = Depends(get_astronomy_use_case),
+    limit: int = Query(50, ge=1, le=200),
+    use_case: EventsUseCase = Depends(get_events_use_case),
 ):
-    # For now return empty list — events are stored in DB in later phases
-    return []
+    ts = _parse_timestamp(timestamp)
+    events = use_case.list_upcoming_events(from_time=ts, limit=limit)
+    return [_serialize(event) for event in events]
 
 
-@router.get("/learn/{object_name}")
-def get_learn(object_name: str):
-    # Placeholder: educational content served from DB in later phases
-    return {"object": object_name, "content": "Not implemented yet"}
+@router.get("/learn/{object_name}", response_model=LearnResponse)
+def get_learn(
+    object_name: str,
+    use_case: LearnUseCase = Depends(get_learn_use_case),
+):
+    content = use_case.get_content_for_object(object_name)
+    if content is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No educational content found for '{object_name}'",
+        )
+    return _serialize(content)

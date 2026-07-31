@@ -2,15 +2,20 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from database.base import Base
-from database.models import EducationalCategory, EducationalContent, Planet, User
-from database.repository import EducationalContentRepository, PlanetRepository, UserRepository
+from database.models import CelestialEvent, EducationalCategory, EducationalContent, Planet, User
+from database.repository import (
+    CelestialEventRepository,
+    EducationalContentRepository,
+    PlanetRepository,
+    UserRepository,
+)
 from database.session import DatabaseSessionManager
 
 
@@ -87,6 +92,73 @@ def test_educational_content_repository_filters_by_category(session_manager: Dat
     results = repo.list_by_category(category.id)
     assert len(results) == 1
     assert results[0].slug == "mars-overview"
+
+    session.close()
+
+
+def test_educational_content_repository_find_by_object_name(session_manager: DatabaseSessionManager) -> None:
+    """Verify object-name resolution for educational content lookups."""
+    session = session_manager.get_session()
+    category = EducationalCategory(
+        slug="solar-system",
+        name="Solar System",
+        description="Reference material for solar-system learning.",
+    )
+    session.add(category)
+    session.commit()
+
+    content = EducationalContent(
+        category_id=category.id,
+        title="Mars Overview",
+        slug="mars-overview",
+        excerpt="An introduction to Mars.",
+        body="Mars is the fourth planet from the Sun.",
+        is_featured=True,
+    )
+
+    repo = EducationalContentRepository(session)
+    repo.create(content)
+    session.commit()
+
+    by_slug = repo.find_by_object_name("mars-overview")
+    assert by_slug is not None
+    assert by_slug.slug == "mars-overview"
+
+    by_object_name = repo.find_by_object_name("mars")
+    assert by_object_name is not None
+    assert by_object_name.slug == "mars-overview"
+
+    session.close()
+
+
+def test_celestial_event_repository_lists_upcoming_events(session_manager: DatabaseSessionManager) -> None:
+    """Verify upcoming event filtering ordered by start time."""
+    session = session_manager.get_session()
+    now = datetime(2026, 7, 31, 12, 0, tzinfo=timezone.utc)
+
+    session.add_all(
+        [
+            CelestialEvent(
+                event_type="conjunction",
+                title="Past Event",
+                description="Already occurred.",
+                starts_at=now - timedelta(days=1),
+            ),
+            CelestialEvent(
+                event_type="opposition",
+                title="Upcoming Event",
+                description="Future event.",
+                starts_at=now + timedelta(days=2),
+            ),
+        ]
+    )
+    session.commit()
+
+    repo = CelestialEventRepository(session)
+    results = repo.list_upcoming(from_time=now)
+
+    assert len(results) == 1
+    assert results[0].title == "Upcoming Event"
 
     session.close()
 

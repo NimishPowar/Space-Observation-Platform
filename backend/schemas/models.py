@@ -63,3 +63,15 @@ class CelestialEventResponse(BaseModel):
     visible_objects: Optional[List[str]] = None
     magnitude: Optional[float] = None
     location: Optional[dict] = None
+
+
+class LearnResponse(BaseModel):
+    object_name: str
+    slug: str
+    title: str
+    excerpt: Optional[str] = None
+    body: Optional[str] = None
+    category_slug: str
+    category_name: str
+    source_url: Optional[str] = None
+    is_featured: bool

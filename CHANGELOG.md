@@ -37,7 +37,9 @@ Observation Planner
 
 Learn Module
 
-- Pending
+- Wired `/api/learn/{object_name}` to MySQL via `LearnUseCase` and `EducationalContentRepository`
+- Wired `/api/events` to MySQL via `EventsUseCase` and `CelestialEventRepository`
+- Added repository lookup helpers and backend/API tests for both endpoints
 
 ---
 

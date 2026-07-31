@@ -10,8 +10,10 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Generic, TypeVar, cast
 
+from datetime import datetime
+
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from database.models import (
     ApiCache,
@@ -102,6 +104,17 @@ class CelestialEventRepository(SQLAlchemyRepository[CelestialEvent]):
     def __init__(self, session: Session) -> None:
         super().__init__(session, CelestialEvent)
 
+    def list_upcoming(self, from_time: datetime, limit: int = 50) -> list[CelestialEvent]:
+        """Return upcoming events starting at or after the given timestamp."""
+        statement = (
+            select(CelestialEvent)
+            .options(joinedload(CelestialEvent.planet))
+            .where(CelestialEvent.starts_at >= from_time)
+            .order_by(CelestialEvent.starts_at.asc())
+            .limit(limit)
+        )
+        return list(self._session.scalars(statement).unique().all())
+
 
 class EducationalCategoryRepository(SQLAlchemyRepository[EducationalCategory]):
     """Repository for educational categories."""
@@ -125,8 +138,37 @@ class EducationalContentRepository(SQLAlchemyRepository[EducationalContent]):
         return list(self._session.scalars(statement).all())
 
     def get_by_slug(self, slug: str) -> EducationalContent | None:
-        statement = select(EducationalContent).where(EducationalContent.slug == slug)
+        statement = (
+            select(EducationalContent)
+            .options(joinedload(EducationalContent.category))
+            .where(EducationalContent.slug == slug)
+        )
         return self._session.scalar(statement)
+
+    def find_by_object_name(self, object_name: str) -> EducationalContent | None:
+        """Resolve educational content from a route object name or slug."""
+        normalized = object_name.strip().lower().replace(" ", "-")
+        if not normalized:
+            return None
+
+        exact_match = self.get_by_slug(normalized)
+        if exact_match is not None:
+            return exact_match
+
+        for suffix in ("-overview", "-guide"):
+            slug_candidate = f"{normalized}{suffix}"
+            match = self.get_by_slug(slug_candidate)
+            if match is not None:
+                return match
+
+        prefix_statement = (
+            select(EducationalContent)
+            .options(joinedload(EducationalContent.category))
+            .where(EducationalContent.slug.like(f"{normalized}%"))
+            .order_by(EducationalContent.slug.asc())
+            .limit(1)
+        )
+        return self._session.scalar(prefix_statement)
 
 
 class ObservationLogRepository(SQLAlchemyRepository[ObservationLog]):
