@@ -8,11 +8,19 @@ settings module.
 from __future__ import annotations
 
 from config.settings import settings
+from database.session import DatabaseSessionManager
 
 
 class DatabaseConnection:
-    """Placeholder for database connection initialization."""
+    """Create a reusable database session manager from the configured settings."""
+
+    def __init__(self, connection_url: str | None = None) -> None:
+        self._connection_url = connection_url or settings.database_url
 
     def get_connection_string(self) -> str:
         """Return the configured database connection string."""
-        return settings.database_url
+        return self._connection_url
+
+    def get_session_manager(self) -> DatabaseSessionManager:
+        """Return a session manager for the configured connection."""
+        return DatabaseSessionManager(connection_url=self._connection_url)

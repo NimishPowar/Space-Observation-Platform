@@ -1,15 +1,173 @@
-"""Repository abstractions for database access."""
+"""Repository abstractions and concrete SQLAlchemy implementations.
+
+The repository layer is intentionally separated from the astronomy engine and
+keeps persistence concerns behind a stable interface that the backend can use
+without directly touching the database session.
+"""
 
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
+from typing import Generic, TypeVar, cast
 
-class BaseRepository:
-    """Base repository interface for data access operations."""
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
-    def create(self, data: object) -> None:
-        """Create a new record in the database."""
-        pass
+from database.models import (
+    ApiCache,
+    ApplicationSetting,
+    CelestialEvent,
+    EducationalCategory,
+    EducationalContent,
+    ObservationLog,
+    Planet,
+    User,
+)
 
-    def fetch(self, identifier: object) -> object:
-        """Fetch a record by identifier."""
-        pass
+ModelT = TypeVar("ModelT")
+
+
+class BaseRepository(ABC, Generic[ModelT]):
+    """Abstract repository contract for CRUD operations."""
+
+    @abstractmethod
+    def create(self, entity: ModelT) -> ModelT:
+        """Persist a new entity."""
+
+    @abstractmethod
+    def get_by_id(self, identifier: int) -> ModelT | None:
+        """Fetch an entity by primary key."""
+
+    @abstractmethod
+    def list_all(self) -> list[ModelT]:
+        """Return all persisted entities."""
+
+    @abstractmethod
+    def update(self, entity: ModelT) -> ModelT:
+        """Update an existing entity in place."""
+
+    @abstractmethod
+    def delete(self, identifier: int) -> bool:
+        """Delete an entity by primary key and return whether it was removed."""
+
+
+class SQLAlchemyRepository(BaseRepository[ModelT]):
+    """Generic SQLAlchemy repository that can back any table model."""
+
+    def __init__(self, session: Session, model: type[ModelT]) -> None:
+        self._session = session
+        self._model = model
+
+    def create(self, entity: ModelT) -> ModelT:
+        self._session.add(entity)
+        self._session.flush()
+        return entity
+
+    def get_by_id(self, identifier: int) -> ModelT | None:
+        statement = select(self._model).where(self._model.id == identifier)
+        return cast(ModelT | None, self._session.scalar(statement))
+
+    def list_all(self) -> list[ModelT]:
+        statement = select(self._model)
+        return list(self._session.scalars(statement).all())
+
+    def update(self, entity: ModelT) -> ModelT:
+        self._session.merge(entity)
+        self._session.flush()
+        return entity
+
+    def delete(self, identifier: int) -> bool:
+        entity = self.get_by_id(identifier)
+        if entity is None:
+            return False
+        self._session.delete(entity)
+        self._session.flush()
+        return True
+
+
+class PlanetRepository(SQLAlchemyRepository[Planet]):
+    """Repository for planet reference data."""
+
+    def __init__(self, session: Session) -> None:
+        super().__init__(session, Planet)
+
+    def get_by_name(self, name: str) -> Planet | None:
+        statement = select(Planet).where(Planet.name == name)
+        return self._session.scalar(statement)
+
+
+class CelestialEventRepository(SQLAlchemyRepository[CelestialEvent]):
+    """Repository for event reference records."""
+
+    def __init__(self, session: Session) -> None:
+        super().__init__(session, CelestialEvent)
+
+
+class EducationalCategoryRepository(SQLAlchemyRepository[EducationalCategory]):
+    """Repository for educational categories."""
+
+    def __init__(self, session: Session) -> None:
+        super().__init__(session, EducationalCategory)
+
+    def get_by_slug(self, slug: str) -> EducationalCategory | None:
+        statement = select(EducationalCategory).where(EducationalCategory.slug == slug)
+        return self._session.scalar(statement)
+
+
+class EducationalContentRepository(SQLAlchemyRepository[EducationalContent]):
+    """Repository for educational content records."""
+
+    def __init__(self, session: Session) -> None:
+        super().__init__(session, EducationalContent)
+
+    def list_by_category(self, category_id: int) -> list[EducationalContent]:
+        statement = select(EducationalContent).where(EducationalContent.category_id == category_id)
+        return list(self._session.scalars(statement).all())
+
+    def get_by_slug(self, slug: str) -> EducationalContent | None:
+        statement = select(EducationalContent).where(EducationalContent.slug == slug)
+        return self._session.scalar(statement)
+
+
+class ObservationLogRepository(SQLAlchemyRepository[ObservationLog]):
+    """Repository for user observation logs."""
+
+    def __init__(self, session: Session) -> None:
+        super().__init__(session, ObservationLog)
+
+    def list_for_user(self, user_id: int) -> list[ObservationLog]:
+        statement = select(ObservationLog).where(ObservationLog.user_id == user_id)
+        return list(self._session.scalars(statement).all())
+
+
+class ApiCacheRepository(SQLAlchemyRepository[ApiCache]):
+    """Repository for cached remote API payloads."""
+
+    def __init__(self, session: Session) -> None:
+        super().__init__(session, ApiCache)
+
+    def get_by_request_key(self, request_key: str) -> ApiCache | None:
+        statement = select(ApiCache).where(ApiCache.request_key == request_key)
+        return self._session.scalar(statement)
+
+
+class ApplicationSettingRepository(SQLAlchemyRepository[ApplicationSetting]):
+    """Repository for setting and preference storage."""
+
+    def __init__(self, session: Session) -> None:
+        super().__init__(session, ApplicationSetting)
+
+    def get_by_key(self, key: str) -> ApplicationSetting | None:
+        statement = select(ApplicationSetting).where(ApplicationSetting.key == key)
+        return self._session.scalar(statement)
+
+
+class UserRepository(SQLAlchemyRepository[User]):
+    """Repository for current and future application users."""
+
+    def __init__(self, session: Session) -> None:
+        super().__init__(session, User)
+
+    def get_by_username(self, username: str) -> User | None:
+        statement = select(User).where(User.username == username)
+        return self._session.scalar(statement)

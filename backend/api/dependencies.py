@@ -7,17 +7,48 @@ initial development phases.
 
 from __future__ import annotations
 
+from collections.abc import Generator
 from functools import lru_cache
+
+from sqlalchemy.orm import Session
 
 from astronomy_engine import create_astronomy_engine
 from astronomy_engine.core.engine import AstronomyEngine
 from backend.use_cases.astronomy_use_case import AstronomyUseCase
+from database.repository import EducationalContentRepository, PlanetRepository
+from database.session import DatabaseSessionManager
 
 
 @lru_cache(maxsize=1)
 def get_engine() -> AstronomyEngine:
     """Return a singleton AstronomyEngine instance."""
     return create_astronomy_engine()
+
+
+@lru_cache(maxsize=1)
+def get_database_session_manager() -> DatabaseSessionManager:
+    """Return a singleton session manager for the database layer."""
+    return DatabaseSessionManager()
+
+
+def get_database_session() -> Generator[Session, None, None]:
+    """Return a database session using the shared session manager."""
+    manager = get_database_session_manager()
+    session = manager.get_session()
+    try:
+        yield session
+    finally:
+        session.close()
+
+
+def get_planet_repository(session: Session) -> PlanetRepository:
+    """Return a repository bound to the current DB session."""
+    return PlanetRepository(session)
+
+
+def get_educational_content_repository(session: Session) -> EducationalContentRepository:
+    """Return an educational content repository bound to the current DB session."""
+    return EducationalContentRepository(session)
 
 
 def get_astronomy_use_case() -> AstronomyUseCase:
