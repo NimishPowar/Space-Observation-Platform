@@ -1,49 +1,49 @@
 # Architecture Overview
 
-This document describes the initial folder structure for the Space Observation
-Intelligence Platform and explains the purpose of each major package.
+This document describes the platform architecture after the MySQL-first and
+ETL-first design update.
 
-## Architecture
+## Architectural Direction
 
-The platform follows clean architecture principles by separating the system into
-independent layers:
+The platform now follows a layered, clean-architecture model with a strict
+separation of concerns:
 
-- `frontend`: User-facing UI components and page composition.
-- `backend`: API boundary, use cases, adapters, and schema definitions.
-- `astronomy_engine`: Core domain logic for astronomical calculations.
-- `database`: Database connectivity and repository abstractions.
-- `analytics`: Analytics and dashboard composition modules.
-- `datasets`: Dataset loading and preparation utilities.
-- `config`: Environment-driven settings and application configuration.
-- `docs`: Supporting documentation and architecture reference.
-- `tests`: Automated tests to validate modules and structure.
+- `frontend`: user-facing UI and experience composition.
+- `backend`: API boundary, use cases, and dependency injection.
+- `astronomy_engine`: real-time astronomical calculations using Skyfield through
+  isolated adapters.
+- `database`: SQLAlchemy repository abstractions and persistence coordination.
+- `etl`: external knowledge ingestion pipeline divided into extraction,
+  transformation, loading, scheduling, and source-specific packaging.
+- `analytics`: analytics pipelines and reporting composition.
+- `datasets`: curated data and dataset preparation assets.
+- `config`: environment-driven settings, including MySQL and Alembic defaults.
+- `docs`: documentation and architecture references.
+- `tests`: validation and contract smoke tests.
 
-Each package is initialized as a Python package using `__init__.py`.
+## Persistence Strategy
 
-## Folder Purpose
+The relational persistence layer uses MySQL as the primary storage engine.
+SQLAlchemy ORM provides the repository boundary, and Alembic handles future
+schema migrations. Database access is kept separate from business logic and
+from the astronomy engine.
 
-- `backend/`: Hosts backend application code organized by clean architecture
-  boundaries. It isolates API and use-case logic from infrastructure adapters.
+## ETL Separation
 
-- `frontend/`: Contains Streamlit frontend entrypoints and page modules.
+The ETL pipeline has a dedicated package boundary and a clear stage separation:
 
-- `astronomy_engine/`: Contains astronomy domain modules, calculation placeholders,
-  and adapters for ephemeris-related data.
+- `etl/extract`: data acquisition from NASA, ESA, and public astronomy datasets.
+- `etl/transform`: normalization, validation, deduplication, and enrichment.
+- `etl/load`: safe database writes through idempotent repository behavior.
+- `etl/schedulers`: scheduled/manual orchestration hooks.
+- `etl/sources`: source adapters for external providers.
+- `etl/models`: staging and pipeline-related domain records.
+- `etl/utils`: common logging, retries, and validation helpers.
+- `etl/pipelines`: top-level orchestration entry points.
 
-- `database/`: Contains database connection and repository abstraction modules.
+## Design Principle
 
-- `analytics/`: Contains analytics dashboard placeholders and visualization
-  orchestration components.
-
-- `datasets/`: Contains dataset loader placeholders to manage curated data assets.
-
-- `tests/`: Contains placeholder tests and package initialization for future test
-  development.
-
-- `docs/`: Contains documentation artifacts that describe architecture and project
-  decisions.
-
-- `config/`: Centralized application settings and environment-aware configuration.
-
-- `logging_config.py`: Centralized logging setup for consistent application
-  diagnostics.
+Skyfield remains responsible only for dynamic, real-time astronomy calculations.
+The ETL components are responsible for collecting reusable external astronomy
+knowledge and storing it in MySQL. The backend decides which source of truth to
+use for a given workflow.

@@ -1,6 +1,6 @@
-# 🌌 Space Observation Intelligence Platform
+# ?? Space Observation Intelligence Platform
 
-> Explore • Plan • Learn
+> Explore � Plan � Learn
 
 ## Overview
 
@@ -10,22 +10,23 @@ The project combines Data Engineering, Data Analysis, Astronomy, and Software De
 
 ## Core Modules
 
-- 🔭 Explore
-- 📅 Observation Planner
-- 🧠 Learn
-- 📊 Analytics
+- ?? Explore
+- ?? Observation Planner
+- ?? Learn
+- ?? Analytics
 
 ## Technology Stack
 
 - Python
 - FastAPI
 - Streamlit
-- PostgreSQL
+- MySQL
 - Skyfield
 - Pandas
 - Plotly
 - SQLAlchemy
+- Alembic
 
 ## Project Status
 
-🚧 Under Development
+?? Under Development

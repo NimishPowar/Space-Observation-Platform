@@ -1,20 +1,22 @@
 # System Architecture
 
 User
-    │
-    ▼
+    �
+    ?
 Frontend (Streamlit)
-    │
-    ▼
+    �
+    ?
 Backend (FastAPI)
-    │
-    ▼
-Astronomy Engine
-(Skyfield)
-    │
-    ├──────────────┐
-    ▼              ▼
-PostgreSQL     Plotly
+    �
+    +---------------------------------------------+
+    ?                      ?                      ?
+Astronomy Engine        ETL Pipeline          MySQL
+(Skyfield)              (Extract / Transform /  SQLAlchemy + Alembic
+                        Load)                 Repository Pattern)
+    �
+    ?
+Analytics / Visualization
+(Plotly)
 
 ---
 
@@ -26,44 +28,36 @@ Responsible for:
 
 - Planet positions
 - Moon phases
-- Rise and Set calculations
+- Rise and set calculations
 - Astronomical calculations
-
----
 
 ### Explore
 
-Displays
+Displays:
 
 - Visible planets
 - Moon phase
 - Events
 
----
-
 ### Observation Planner
 
-Calculates
+Calculates:
 
 - Observation Window
 - Observation Score
 - Recommendations
 
----
-
 ### Learn
 
-Provides
+Provides:
 
 - Explanations
 - Animations
 - Educational Content
 
----
-
 ### Analytics
 
-Displays
+Displays:
 
 - Charts
 - Trends

@@ -1,6 +1,13 @@
-"""Database connection placeholder."""
+"""Database connection placeholder.
+
+This repository boundary remains separate from the astronomy engine and ETL
+pipeline. SQLAlchemy-backed MySQL configuration is read from the central
+settings module.
+"""
 
 from __future__ import annotations
+
+from config.settings import settings
 
 
 class DatabaseConnection:
@@ -8,4 +15,4 @@ class DatabaseConnection:
 
     def get_connection_string(self) -> str:
         """Return the configured database connection string."""
-        return ""
+        return settings.database_url

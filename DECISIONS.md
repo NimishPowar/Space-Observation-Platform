@@ -17,14 +17,15 @@ Reason
 
 ## Decision 002
 
-### Why PostgreSQL?
+### Why MySQL?
 
 Reason
 
-- Relational data
-- Better SQL support
-- Suitable for Data Engineering
-- Easy integration with SQLAlchemy
+- Mature relational database
+- Strong ecosystem support
+- Reliable SQLAlchemy integration
+- Suitable for normalized, production-ready persistence
+- Good fit for ETL-curated astronomy knowledge storage
 
 ---
 
