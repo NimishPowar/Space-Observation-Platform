@@ -1,11 +1,25 @@
-"""Frontend application entrypoint placeholder.
-
-This module will serve as the entrypoint for the Streamlit-based UI.
-"""
+"""Frontend application entrypoint for the Streamlit UI."""
 
 from __future__ import annotations
 
+import streamlit as st
+
+from frontend.pages.explore import render as render_explore
+from frontend.pages.learn import render as render_learn
+from frontend.pages.planner import render as render_planner
+
 
 def run() -> None:
-    """Run the frontend application."""
-    pass
+    """Run the Streamlit UI with a user-focused navigation flow."""
+    st.set_page_config(page_title="Space Observation Intelligence Platform", layout="wide")
+    pages = {
+        "Explore": render_explore,
+        "Observation Planner": render_planner,
+        "Learn": render_learn,
+    }
+    selected_page = st.sidebar.radio("Navigation", list(pages.keys()), index=0)
+    pages[selected_page]()
+
+
+if __name__ == "__main__":
+    run()

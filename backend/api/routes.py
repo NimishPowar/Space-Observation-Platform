@@ -146,8 +146,6 @@ def get_sun(
 
 @router.get("/events", response_model=List[CelestialEventResponse])
 def get_events(
-    latitude: float,
-    longitude: float,
     timestamp: Optional[str] = None,
     limit: int = Query(50, ge=1, le=200),
     use_case: EventsUseCase = Depends(get_events_use_case),
