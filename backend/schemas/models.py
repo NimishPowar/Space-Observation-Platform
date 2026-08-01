@@ -37,6 +37,14 @@ class VisibilityWindowResponse(BaseModel):
     description: Optional[str] = None
 
 
+class ObservationScoreResponse(BaseModel):
+    object_name: str
+    score: float
+    score_reason: Optional[str] = None
+    visibility_window: Optional[VisibilityWindowResponse] = None
+    metrics: Optional[dict] = None
+
+
 class SolarStateResponse(BaseModel):
     sunrise: Optional[datetime] = None
     sunset: Optional[datetime] = None

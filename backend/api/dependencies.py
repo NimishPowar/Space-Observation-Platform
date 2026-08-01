@@ -18,6 +18,7 @@ from astronomy_engine.core.engine import AstronomyEngine
 from backend.use_cases.astronomy_use_case import AstronomyUseCase
 from backend.use_cases.events_use_case import EventsUseCase
 from backend.use_cases.learn_use_case import LearnUseCase
+from backend.use_cases.observation_planner import ObservationPlannerUseCase
 from database.repository import (
     CelestialEventRepository,
     EducationalContentRepository,
@@ -67,6 +68,11 @@ def get_astronomy_use_case() -> AstronomyUseCase:
     """Return a new AstronomyUseCase bound to the shared engine."""
     engine = get_engine()
     return AstronomyUseCase(engine=engine)
+
+
+def get_observation_planner_use_case() -> ObservationPlannerUseCase:
+    """Return a new ObservationPlannerUseCase bound to the shared engine."""
+    return ObservationPlannerUseCase(engine=get_engine())
 
 
 def get_learn_use_case(

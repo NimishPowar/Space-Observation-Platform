@@ -13,13 +13,20 @@ from backend.schemas.models import (
     MoonResponse,
     PlanetPositionResponse,
     VisibilityWindowResponse,
+    ObservationScoreResponse,
     CelestialEventResponse,
     SolarStateResponse,
     LearnResponse,
 )
-from backend.api.dependencies import get_astronomy_use_case, get_events_use_case, get_learn_use_case
+from backend.api.dependencies import (
+    get_astronomy_use_case,
+    get_events_use_case,
+    get_learn_use_case,
+    get_observation_planner_use_case,
+)
 from backend.use_cases.events_use_case import EventsUseCase
 from backend.use_cases.learn_use_case import LearnUseCase
+from backend.use_cases.observation_planner import ObservationPlannerUseCase
 
 router = APIRouter()
 
@@ -107,6 +114,21 @@ def get_visibility(
     context = _build_context(latitude, longitude, timestamp, elevation, names)
     windows = use_case.get_visibility_windows(context, names)
     return _serialize(windows)
+
+
+@router.get("/planner", response_model=List[ObservationScoreResponse])
+def get_planner(
+    latitude: float,
+    longitude: float,
+    timestamp: Optional[str] = None,
+    elevation: Optional[float] = None,
+    names: Optional[List[str]] = Query(None),
+    limit: int = Query(5, ge=1, le=10),
+    use_case: ObservationPlannerUseCase = Depends(get_observation_planner_use_case),
+):
+    context = _build_context(latitude, longitude, timestamp, elevation, names)
+    scores = use_case.estimate_window(context, names, limit=limit)
+    return _serialize(scores)
 
 
 @router.get("/sun", response_model=SolarStateResponse)
