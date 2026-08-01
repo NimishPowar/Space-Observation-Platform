@@ -9,9 +9,9 @@ from frontend.ui import render_error, render_loading_state, render_section_headi
 
 
 def render() -> None:
-    """Render the learn page."""
+    """Render the learn page with a readable card-based educational layout."""
     st.title("Learn")
-    st.caption("Look up educational content from the backend repository-backed content layer.")
+    st.caption("Explore educational astronomy content from the backend repository layer.")
 
     object_name = st.text_input("Object or topic", value="mars")
     if not st.button("Load learning content"):
@@ -28,14 +28,19 @@ def render() -> None:
         render_loading_state(load_data)
         render_status("Educational content loaded successfully.", kind="success")
         render_section_heading("Educational content")
-        st.markdown(f"## {content.get('title', 'Untitled')}")
-        st.caption(f"Category: {content.get('category_name', 'General')} | Slug: {content.get('slug', 'N/A')}")
-        if content.get("excerpt"):
-            st.write(content.get("excerpt"))
-        if content.get("body"):
-            st.write(content.get("body"))
-        if content.get("source_url"):
-            st.link_button("Open source", content.get("source_url"))
+
+        with st.container():
+            st.markdown(f"## {content.get('title', 'Untitled')}")
+            st.markdown(
+                f"**Category:** {content.get('category_name', 'General')}  \
+                **Slug:** {content.get('slug', 'N/A')}"
+            )
+            if content.get("excerpt"):
+                st.info(content.get("excerpt"))
+            if content.get("body"):
+                st.write(content.get("body"))
+            if content.get("source_url"):
+                st.link_button("Open source", content.get("source_url"))
     except FrontendApiError as exc:
         render_error(str(exc))
 

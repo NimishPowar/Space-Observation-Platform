@@ -129,10 +129,18 @@ class ApiClient:
             },
         )
 
-    def get_events(self, timestamp: str | None = None, limit: int = 10) -> list:
+    def get_events(
+        self,
+        latitude: float = 12.5,
+        longitude: float = 77.5,
+        timestamp: str | None = None,
+        limit: int = 10,
+    ) -> list:
         return self.get_json(
             "/events",
             params={
+                "latitude": latitude,
+                "longitude": longitude,
                 "timestamp": timestamp,
                 "limit": limit,
             },

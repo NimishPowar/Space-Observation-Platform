@@ -8,84 +8,96 @@ from frontend.client import ApiClient, FrontendApiError
 from frontend.ui import (
     render_error,
     render_loading_state,
+    render_location_selector,
     render_metrics,
     render_section_heading,
     render_status,
     render_table,
+    render_time_selector,
 )
 
 
-def _build_score_rows(scores: list[dict]) -> list[dict]:
+def _star_rating(score: float) -> str:
+    rounded = int(round(score / 20))
+    return "★" * max(1, min(5, rounded)) + "☆" * max(0, 5 - max(1, min(5, rounded)))
+
+
+def _build_event_rows(events: list[dict]) -> list[dict]:
     rows: list[dict] = []
-    for score in scores or []:
-        visibility_window = score.get("visibility_window") or {}
+    for event in events or []:
         rows.append(
             {
-                "Object": score.get("object_name", "N/A"),
-                "Score": f"{score.get('score', 0):.2f}",
-                "Reason": score.get("score_reason", "N/A"),
-                "Window start": visibility_window.get("start", "N/A"),
-                "Window end": visibility_window.get("end", "N/A"),
-                "Description": visibility_window.get("description", "N/A"),
+                "Event": event.get("name", "N/A"),
+                "Category": event.get("category", "N/A"),
+                "Starts": event.get("start_time", "N/A"),
+                "Type": event.get("event_type", "N/A"),
             }
         )
     return rows
 
 
 def render() -> None:
-    """Render the observation planner page."""
+    """Render the observation planner page with a city-first workflow and event recommendations."""
     st.title("Observation Planner")
-    st.caption("Use a city search to resolve coordinates and rank the best observation windows.")
+    st.caption("What should I observe tonight?")
 
-    with st.form("planner_form"):
-        city_search = st.text_input("City search", value="Mumbai")
-        timestamp = st.text_input("Timestamp (optional ISO 8601)", value="")
-        elevation = st.number_input("Elevation (meters)", value=0.0, step=1.0)
-        limit = st.slider("Limit", min_value=1, max_value=10, value=5)
-        with st.expander("Advanced"):
-            latitude = st.number_input("Latitude", value=12.5, min_value=-90.0, max_value=90.0, step=0.1)
-            longitude = st.number_input("Longitude", value=77.5, min_value=-180.0, max_value=180.0, step=0.1)
-        submitted = st.form_submit_button("Plan observation")
+    latitude, longitude, location_label = render_location_selector()
+    timestamp = render_time_selector()
+    limit = st.slider("How many recommendations?", min_value=1, max_value=10, value=5)
 
-    if not submitted:
+    if not st.button("Plan observation"):
         return
 
     client = ApiClient()
     try:
-        scores = None
-        resolved_latitude = latitude
-        resolved_longitude = longitude
-        location_label = "manual coordinates"
+        scores = events = None
 
         def load_data() -> None:
-            nonlocal scores, resolved_latitude, resolved_longitude, location_label
-            if city_search.strip():
-                city_matches = client.search_city(city_search)
-                selected_match = city_matches[0]
-                resolved_latitude = float(selected_match["lat"])
-                resolved_longitude = float(selected_match["lon"])
-                location_label = selected_match.get("display_name", city_search)
-
+            nonlocal scores, events
             scores = client.get_planner(
-                latitude=resolved_latitude,
-                longitude=resolved_longitude,
-                timestamp=timestamp or None,
-                elevation=elevation,
+                latitude=latitude,
+                longitude=longitude,
+                timestamp=timestamp,
+                elevation=0.0,
                 limit=limit,
             )
+            try:
+                events = client.get_events(
+                    latitude=latitude,
+                    longitude=longitude,
+                    timestamp=timestamp,
+                    limit=min(3, limit),
+                )
+            except FrontendApiError:
+                events = None
 
         render_loading_state(load_data)
         render_status(f"Observation plan prepared for {location_label}.", kind="success")
         render_metrics(
             [
-                ("Latitude", f"{resolved_latitude:.3f}"),
-                ("Longitude", f"{resolved_longitude:.3f}"),
-                ("Ranked windows", str(limit)),
+                ("Location", location_label),
+                ("Tonight", str(limit)),
+                ("Best object", (scores or [{}])[0].get("object_name", "N/A")),
             ]
         )
 
-        render_section_heading("Planning results")
-        render_table(_build_score_rows(scores))
+        render_section_heading("Best Observation Opportunities")
+        for score in scores or []:
+            visibility_window = score.get("visibility_window") or {}
+            st.markdown(
+                f"### {_star_rating(float(score.get('score', 0)))} {score.get('object_name', 'Observation')}"
+            )
+            st.write(score.get("score_reason", "Observation opportunity available."))
+            st.caption(
+                f"Best Time: {visibility_window.get('start', 'N/A')} → {visibility_window.get('end', 'N/A')}"
+            )
+            st.markdown("---")
+
+        render_section_heading("Upcoming Celestial Events")
+        if events:
+            render_table(_build_event_rows(events))
+        else:
+            st.info("Upcoming celestial event details are temporarily unavailable.")
     except FrontendApiError as exc:
         render_error(str(exc))
 

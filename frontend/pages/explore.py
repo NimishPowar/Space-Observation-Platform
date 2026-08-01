@@ -62,7 +62,15 @@ def render() -> None:
                 timestamp=timestamp,
                 elevation=elevation,
             )
-            events = client.get_events(timestamp=timestamp, limit=1)
+            try:
+                events = client.get_events(
+                    latitude=latitude,
+                    longitude=longitude,
+                    timestamp=timestamp,
+                    limit=1,
+                )
+            except FrontendApiError:
+                events = None
 
         render_loading_state(load_data)
         render_status(f"📍 {location_label}", kind="info")
@@ -107,7 +115,7 @@ def render() -> None:
             st.write(event.get("description") or "A celestial event is available for tonight.")
             st.caption(f"Category: {event.get('category', 'General')} | Type: {event.get('event_type', 'General')}")
         else:
-            st.info("No upcoming event details are available right now.")
+            st.info("Upcoming event information is temporarily unavailable.")
 
         st.markdown("---")
         st.subheader("Quick Actions")
