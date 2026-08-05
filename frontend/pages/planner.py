@@ -6,6 +6,7 @@ and exploring NASA Astronomy Picture of the Day (APOD).
 
 from __future__ import annotations
 
+from datetime import datetime
 import streamlit as st
 
 from frontend.client import ApiClient, FrontendApiError
@@ -26,15 +27,29 @@ def _star_rating(score: float) -> str:
     return "★" * max(1, min(5, rounded)) + "☆" * max(0, 5 - max(1, min(5, rounded)))
 
 
+def _format_event_category(cat: str) -> str:
+    return cat.replace("_", " ").title() if cat else "General"
+
+
+def _format_iso_date(dt_str: str | None) -> str:
+    if not dt_str:
+        return "N/A"
+    try:
+        dt = datetime.fromisoformat(dt_str)
+        return dt.strftime("%B %d, %Y at %H:%M UTC")
+    except Exception:
+        return dt_str.replace("T", " ")
+
+
 def _build_event_rows(events: list[dict]) -> list[dict]:
     rows: list[dict] = []
     for event in events or []:
         rows.append(
             {
-                "Event": event.get("name", "N/A"),
-                "Category": event.get("category", "N/A"),
-                "Starts": event.get("start_time", "N/A"),
-                "Type": event.get("event_type", "N/A"),
+                "Celestial Event": event.get("name", "N/A"),
+                "Category": _format_event_category(event.get("category") or event.get("event_type", "")),
+                "Event Date & Time": _format_iso_date(event.get("start_time")),
+                "Description": event.get("description", "N/A"),
             }
         )
     return rows
@@ -89,7 +104,7 @@ def render() -> None:
                         )
                         st.write(score.get("score_reason", "Observation opportunity available."))
                         st.caption(
-                            f"⏰ Best Window: {visibility_window.get('start', 'N/A')} → {visibility_window.get('end', 'N/A')}"
+                            f"⏰ Best Window: {_format_iso_date(visibility_window.get('start'))} → {_format_iso_date(visibility_window.get('end'))}"
                         )
                     with col2:
                         st.metric("Score", f"{float(score.get('score', 0)):.1f}/100")
@@ -112,7 +127,7 @@ def render() -> None:
 
                 img_url = latest.get("url")
                 if img_url and latest.get("media_type") == "image":
-                    st.image(img_url, use_column_width=True, caption=latest.get("title"))
+                    st.image(img_url, use_container_width=True, caption=latest.get("title"))
                 elif img_url:
                     st.video(img_url)
 
@@ -129,7 +144,7 @@ def render() -> None:
                     for idx, apod in enumerate(recent_apods[1:4]):
                         with cols[idx % len(cols)]:
                             if apod.get("url") and apod.get("media_type") == "image":
-                                st.image(apod.get("url"), caption=apod.get("title"))
+                                st.image(apod.get("url"), caption=apod.get("title"), use_container_width=True)
                             st.caption(f"📅 {apod.get('apod_date')}")
             else:
                 st.info("NASA APOD entries will appear here once populated by the ETL pipeline.")
@@ -144,7 +159,16 @@ def render() -> None:
         try:
             events = client.get_events(limit=10)
             if events:
-                render_table(_build_event_rows(events))
+                for event in events:
+                    with st.container():
+                        st.markdown(f"#### 🌠 {event.get('name', 'N/A')}")
+                        st.caption(
+                            f"Category: **{_format_event_category(event.get('category') or event.get('event_type', ''))}** | "
+                            f"Starts: **{_format_iso_date(event.get('start_time'))}**"
+                        )
+                        if event.get("description"):
+                            st.write(event.get("description"))
+                        st.divider()
             else:
                 st.info("No upcoming events currently scheduled in the platform catalog.")
         except FrontendApiError as exc:

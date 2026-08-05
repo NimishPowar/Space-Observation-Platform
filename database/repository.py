@@ -12,7 +12,7 @@ from typing import Generic, TypeVar, cast
 
 from datetime import datetime
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session, joinedload
 
 from database.models import (
@@ -146,6 +146,21 @@ class EducationalContentRepository(SQLAlchemyRepository[EducationalContent]):
         )
         return self._session.scalar(statement)
 
+    def list_all(self) -> list[EducationalContent]:
+        """Return all educational content records."""
+        statement = select(EducationalContent).options(joinedload(EducationalContent.category)).order_by(EducationalContent.title.asc())
+        return list(self._session.scalars(statement).all())
+
+    def list_featured(self) -> list[EducationalContent]:
+        """Return featured educational content records."""
+        statement = (
+            select(EducationalContent)
+            .options(joinedload(EducationalContent.category))
+            .where(EducationalContent.is_featured == True)
+            .order_by(EducationalContent.title.asc())
+        )
+        return list(self._session.scalars(statement).all())
+
     def find_by_object_name(self, object_name: str) -> EducationalContent | None:
         """Resolve educational content from a route object name or slug."""
         normalized = object_name.strip().lower().replace(" ", "-")
@@ -170,6 +185,31 @@ class EducationalContentRepository(SQLAlchemyRepository[EducationalContent]):
             .limit(1)
         )
         return self._session.scalar(prefix_statement)
+
+    def search_topics(
+        self, query: str | None = None, category_slug: str | None = None
+    ) -> list[EducationalContent]:
+        """Search educational content by keyword query and/or category slug."""
+        statement = select(EducationalContent).options(joinedload(EducationalContent.category))
+
+        if category_slug:
+            statement = statement.join(EducationalContent.category).where(
+                EducationalCategory.slug == category_slug
+            )
+
+        if query:
+            pattern = f"%{query.strip()}%"
+            statement = statement.where(
+                or_(
+                    EducationalContent.title.ilike(pattern),
+                    EducationalContent.excerpt.ilike(pattern),
+                    EducationalContent.body.ilike(pattern),
+                    EducationalContent.slug.ilike(pattern),
+                )
+            )
+
+        statement = statement.order_by(EducationalContent.title.asc())
+        return list(self._session.scalars(statement).all())
 
 
 class ObservationLogRepository(SQLAlchemyRepository[ObservationLog]):

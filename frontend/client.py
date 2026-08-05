@@ -152,6 +152,39 @@ class ApiClient:
             f"/learn/{object_name.strip().lower()}",
         )
 
+    def get_discovery_categories(self) -> list:
+        return self.get_json("/discovery/categories")
+
+    def get_discovery_topics(self, query: str | None = None, category: str | None = None) -> list:
+        params = {}
+        if query:
+            params["query"] = query
+        if category:
+            params["category"] = category
+        return self.get_json("/discovery/topics", params=params)
+
+    def get_discovery_featured(self) -> list:
+        return self.get_json("/discovery/featured")
+
+    def get_discovery_topic(self, slug: str) -> dict:
+        return self.get_json(f"/discovery/topic/{slug.strip().lower()}")
+
+    def get_discovery_moon_phase(
+        self,
+        latitude: float = 12.9716,
+        longitude: float = 77.5946,
+        timestamp: str | None = None,
+        day_offset: int = 0,
+    ) -> dict:
+        params: dict = {
+            "latitude": latitude,
+            "longitude": longitude,
+            "day_offset": day_offset,
+        }
+        if timestamp:
+            params["timestamp"] = timestamp
+        return self.get_json("/discovery/moon-phase", params=params)
+
     def get_stars(self, latitude: float, longitude: float, timestamp: str | None = None, elevation: float | None = None, min_altitude: float = 0.0) -> list:
         return self.get_json(
             "/stars",

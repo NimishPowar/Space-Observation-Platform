@@ -14,6 +14,16 @@ class MoonResponse(BaseModel):
     phase_angle: float
     age_days: Optional[float] = None
     distance_km: Optional[float] = None
+    prev_phase_name: Optional[str] = None
+    prev_phase_date: Optional[datetime] = None
+    next_phase_name: Optional[str] = None
+    next_phase_date: Optional[datetime] = None
+
+
+class MoonSimulatorResponse(MoonResponse):
+    rise_time: Optional[datetime] = None
+    set_time: Optional[datetime] = None
+    unicode_symbol: Optional[str] = None
 
 
 class PlanetPositionResponse(BaseModel):
@@ -83,6 +93,16 @@ class LearnResponse(BaseModel):
     category_name: str
     source_url: Optional[str] = None
     is_featured: bool
+
+
+class DiscoveryCategoryResponse(BaseModel):
+    slug: str
+    name: str
+    description: Optional[str] = None
+
+
+class DiscoveryTopicResponse(LearnResponse):
+    pass
 
 
 class StarResponse(BaseModel):

@@ -90,6 +90,10 @@ def make_moon_phase(state: Dict[str, object]) -> MoonPhase:
         phase_angle=state.get("phase_angle", 0.0),
         age_days=state.get("age_days"),
         distance_km=state.get("distance_km"),
+        prev_phase_name=state.get("prev_phase_name"),
+        prev_phase_date=state.get("prev_phase_date"),
+        next_phase_name=state.get("next_phase_name"),
+        next_phase_date=state.get("next_phase_date"),
     )
 
 
@@ -184,19 +188,51 @@ def elevation_and_azimuth(observer, body, ts_time):
     }
 
 
+def get_major_lunar_phases(phase_angle: float, timestamp: datetime) -> Dict[str, object]:
+    """Calculate the previous and next major lunar phases and their estimated timestamps."""
+    synodic_days = 29.530588
+    angle = phase_angle % 360.0
+
+    if angle < 90.0:
+        prev_name, prev_diff = "New Moon", angle
+        next_name, next_diff = "First Quarter", 90.0 - angle
+    elif angle < 180.0:
+        prev_name, prev_diff = "First Quarter", angle - 90.0
+        next_name, next_diff = "Full Moon", 180.0 - angle
+    elif angle < 270.0:
+        prev_name, prev_diff = "Full Moon", angle - 180.0
+        next_name, next_diff = "Third Quarter", 270.0 - angle
+    else:
+        prev_name, prev_diff = "Third Quarter", angle - 270.0
+        next_name, next_diff = "New Moon", 360.0 - angle
+
+    prev_date = timestamp - timedelta(days=(prev_diff / 360.0) * synodic_days)
+    next_date = timestamp + timedelta(days=(next_diff / 360.0) * synodic_days)
+
+    return {
+        "prev_phase_name": prev_name,
+        "prev_phase_date": prev_date,
+        "next_phase_name": next_name,
+        "next_phase_date": next_date,
+    }
+
+
 def calculate_moon_state(ephemeris, ts, observer, timestamp: datetime) -> Dict[str, object]:
     t = ts.utc(timestamp.year, timestamp.month, timestamp.day, timestamp.hour, timestamp.minute, timestamp.second)
     moon = body_for_name(ephemeris, "Moon")
     phase_angle = float(almanac.moon_phase(ephemeris, t).degrees)
     illumination = (1.0 + math.cos(math.radians(phase_angle))) / 2.0
+    age_days = (phase_angle / 360.0) * 29.530588
     state = elevation_and_azimuth(observer, moon, t)
+    major_phases = get_major_lunar_phases(phase_angle, timestamp)
     state.update(
         phase_name=phase_name_from_angle(phase_angle),
         illumination=illumination,
         phase_angle=phase_angle,
-        age_days=None,
+        age_days=age_days,
         distance_km=None,
         object_name="Moon",
+        **major_phases,
     )
     return state
 
@@ -253,10 +289,11 @@ def calculate_rise_set(ephemeris, ts, observer, body_name: str, timestamp: datet
     body = body_for_name(ephemeris, body_name)
     t0, t1 = build_time_range(timestamp)
     try:
+        geo_observer = getattr(observer, "target", observer)
         times, events = almanac.find_discrete(
             ts.utc(t0.year, t0.month, t0.day, 0, 0, 0),
             ts.utc(t1.year, t1.month, t1.day, 0, 0, 0),
-            almanac.risings_and_settings(ephemeris, body, observer),
+            almanac.risings_and_settings(ephemeris, body, geo_observer),
         )
     except Exception:
         return {

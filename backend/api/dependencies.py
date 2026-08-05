@@ -22,6 +22,7 @@ from backend.use_cases.nasa_apod_use_case import NasaApodUseCase
 from backend.use_cases.observation_planner import ObservationPlannerUseCase
 from database.repository import (
     CelestialEventRepository,
+    EducationalCategoryRepository,
     EducationalContentRepository,
     NasaApodRepository,
     PlanetRepository,
@@ -86,7 +87,10 @@ def get_learn_use_case(
     session: Session = Depends(get_database_session),
 ) -> LearnUseCase:
     """Return a LearnUseCase bound to the current database session."""
-    return LearnUseCase(content_repository=EducationalContentRepository(session))
+    return LearnUseCase(
+        content_repository=EducationalContentRepository(session),
+        category_repository=EducationalCategoryRepository(session),
+    )
 
 
 def get_events_use_case(

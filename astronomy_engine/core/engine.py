@@ -49,6 +49,10 @@ class AstronomyEngine:
         """Return moon phase and visibility details for the given context."""
         return self._moon_service.get_moon_phase(context)
 
+    def get_lunar_visibility(self, context: ObservationContext) -> MoonVisibility:
+        """Return lunar rise/set and visibility details for the given context."""
+        return self._moon_service.get_lunar_visibility(context)
+
     def get_planetary_positions(
         self,
         context: ObservationContext,

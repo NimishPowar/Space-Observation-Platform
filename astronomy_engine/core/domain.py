@@ -40,6 +40,10 @@ class MoonPhase:
     phase_angle: float
     age_days: Optional[float] = None
     distance_km: Optional[float] = None
+    prev_phase_name: Optional[str] = None
+    prev_phase_date: Optional[datetime] = None
+    next_phase_name: Optional[str] = None
+    next_phase_date: Optional[datetime] = None
 
 
 @dataclass(frozen=True)

@@ -12,12 +12,15 @@ from backend.schemas.apod_models import ApodResponse
 from backend.use_cases.astronomy_use_case import AstronomyUseCase
 from backend.schemas.models import (
     MoonResponse,
+    MoonSimulatorResponse,
     PlanetPositionResponse,
     VisibilityWindowResponse,
     ObservationScoreResponse,
     CelestialEventResponse,
     SolarStateResponse,
     LearnResponse,
+    DiscoveryCategoryResponse,
+    DiscoveryTopicResponse,
     StarResponse,
     ConstellationResponse,
     SkyMapResponse,
@@ -202,6 +205,64 @@ def get_events(
     ts = _parse_timestamp(timestamp)
     events = use_case.list_upcoming_events(from_time=ts, limit=limit)
     return [_serialize(event) for event in events]
+
+
+@router.get("/discovery/categories", response_model=List[DiscoveryCategoryResponse])
+def get_discovery_categories(
+    use_case: LearnUseCase = Depends(get_learn_use_case),
+):
+    categories = use_case.list_categories()
+    return [_serialize(c) for c in categories]
+
+
+@router.get("/discovery/topics", response_model=List[DiscoveryTopicResponse])
+def get_discovery_topics(
+    query: Optional[str] = Query(None),
+    category: Optional[str] = Query(None),
+    use_case: LearnUseCase = Depends(get_learn_use_case),
+):
+    topics = use_case.search_topics(query=query, category_slug=category)
+    return [_serialize(t) for t in topics]
+
+
+@router.get("/discovery/featured", response_model=List[DiscoveryTopicResponse])
+def get_discovery_featured(
+    use_case: LearnUseCase = Depends(get_learn_use_case),
+):
+    topics = use_case.list_featured()
+    return [_serialize(t) for t in topics]
+
+
+@router.get("/discovery/topic/{slug}", response_model=DiscoveryTopicResponse)
+def get_discovery_topic_by_slug(
+    slug: str,
+    use_case: LearnUseCase = Depends(get_learn_use_case),
+):
+    content = use_case.get_content_for_object(slug)
+    if content is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No educational topic found for '{slug}'",
+        )
+    return _serialize(content)
+
+
+@router.get("/discovery/moon-phase", response_model=MoonSimulatorResponse)
+def get_discovery_moon_phase(
+    latitude: float = Query(12.9716),
+    longitude: float = Query(77.5946),
+    timestamp: Optional[str] = Query(None),
+    day_offset: int = Query(0, ge=-365, le=365),
+    elevation: Optional[float] = Query(None),
+    use_case: AstronomyUseCase = Depends(get_astronomy_use_case),
+):
+    ts = _parse_timestamp(timestamp)
+    if day_offset != 0:
+        from datetime import timedelta
+        ts = ts + timedelta(days=day_offset)
+    context = _build_context(latitude, longitude, ts.isoformat(), elevation)
+    data = use_case.get_moon_simulator_data(context)
+    return _serialize(data)
 
 
 @router.get("/learn/{object_name}", response_model=LearnResponse)
