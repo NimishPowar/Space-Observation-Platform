@@ -83,3 +83,39 @@ class LearnResponse(BaseModel):
     category_name: str
     source_url: Optional[str] = None
     is_featured: bool
+
+
+class StarResponse(BaseModel):
+    name: str
+    bayer_designation: str
+    constellation: str
+    right_ascension: float
+    declination: float
+    azimuth: Optional[float] = None
+    altitude: Optional[float] = None
+    magnitude: Optional[float] = None
+    spectral_type: Optional[str] = None
+    color_hex: Optional[str] = None
+    is_visible: Optional[bool] = None
+
+
+class ConstellationResponse(BaseModel):
+    name: str
+    latin_name: str
+    abbreviation: str
+    center_azimuth: Optional[float] = None
+    center_altitude: Optional[float] = None
+    star_names: Optional[List[str]] = None
+    lines: Optional[List[List[str]]] = None
+    is_visible: Optional[bool] = None
+
+
+class SkyMapResponse(BaseModel):
+    timestamp: datetime
+    location: Optional[dict] = None
+    moon: Optional[MoonResponse] = None
+    sun: Optional[SolarStateResponse] = None
+    planets: List[PlanetPositionResponse] = []
+    stars: List[StarResponse] = []
+    constellations: List[ConstellationResponse] = []
+

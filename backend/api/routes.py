@@ -17,6 +17,9 @@ from backend.schemas.models import (
     CelestialEventResponse,
     SolarStateResponse,
     LearnResponse,
+    StarResponse,
+    ConstellationResponse,
+    SkyMapResponse,
 )
 from backend.api.dependencies import (
     get_astronomy_use_case,
@@ -57,7 +60,6 @@ def _build_context(
 
 def _serialize(obj: Any) -> Any:
     """Serialize domain models to JSON-friendly structures."""
-    # handle dataclasses-like objects
     from dataclasses import is_dataclass, asdict
 
     if obj is None:
@@ -67,6 +69,8 @@ def _serialize(obj: Any) -> Any:
         for k, v in d.items():
             if isinstance(v, datetime):
                 d[k] = v.isoformat()
+            elif is_dataclass(v) or isinstance(v, (list, dict)):
+                d[k] = _serialize(v)
         return d
     if isinstance(obj, list):
         return [_serialize(i) for i in obj]
@@ -100,6 +104,46 @@ def get_planets(
     context = _build_context(latitude, longitude, timestamp, elevation, names)
     planets = use_case.get_planetary_positions(context)
     return _serialize(planets)
+
+
+@router.get("/stars", response_model=List[StarResponse])
+def get_stars(
+    latitude: float,
+    longitude: float,
+    timestamp: Optional[str] = None,
+    elevation: Optional[float] = None,
+    min_altitude: float = Query(0.0),
+    use_case: AstronomyUseCase = Depends(get_astronomy_use_case),
+):
+    context = _build_context(latitude, longitude, timestamp, elevation)
+    stars = use_case.get_star_positions(context, min_altitude=min_altitude)
+    return _serialize(stars)
+
+
+@router.get("/constellations", response_model=List[ConstellationResponse])
+def get_constellations(
+    latitude: float,
+    longitude: float,
+    timestamp: Optional[str] = None,
+    elevation: Optional[float] = None,
+    use_case: AstronomyUseCase = Depends(get_astronomy_use_case),
+):
+    context = _build_context(latitude, longitude, timestamp, elevation)
+    constellations = use_case.get_constellations(context)
+    return _serialize(constellations)
+
+
+@router.get("/skymap", response_model=SkyMapResponse)
+def get_skymap(
+    latitude: float,
+    longitude: float,
+    timestamp: Optional[str] = None,
+    elevation: Optional[float] = None,
+    use_case: AstronomyUseCase = Depends(get_astronomy_use_case),
+):
+    context = _build_context(latitude, longitude, timestamp, elevation)
+    skymap_data = use_case.get_skymap_data(context)
+    return _serialize(skymap_data)
 
 
 @router.get("/visibility", response_model=List[VisibilityWindowResponse])

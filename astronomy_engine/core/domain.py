@@ -6,7 +6,7 @@ astronomical domain independent from web and UI frameworks.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Dict, List, Optional
 
@@ -126,3 +126,48 @@ class CelestialEvent:
     magnitude: Optional[float] = None
     location: Optional[Location] = None
     event_id: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class StarPosition:
+    """Astronomical position and visibility state for a bright star."""
+
+    name: str
+    bayer_designation: str
+    constellation: str
+    right_ascension: float
+    declination: float
+    azimuth: Optional[float] = None
+    altitude: Optional[float] = None
+    magnitude: Optional[float] = None
+    spectral_type: Optional[str] = None
+    color_hex: Optional[str] = None
+    is_visible: Optional[bool] = None
+
+
+@dataclass(frozen=True)
+class ConstellationData:
+    """Constellation metadata and star line connections."""
+
+    name: str
+    latin_name: str
+    abbreviation: str
+    center_azimuth: Optional[float] = None
+    center_altitude: Optional[float] = None
+    star_names: Optional[List[str]] = None
+    lines: Optional[List[List[str]]] = None
+    is_visible: Optional[bool] = None
+
+
+@dataclass(frozen=True)
+class SkyMapData:
+    """Aggregated sky map domain model for rendering the night sky."""
+
+    timestamp: datetime
+    location: Location
+    moon: Optional[MoonPhase] = None
+    sun: Optional[SolarState] = None
+    planets: List[PlanetPosition] = field(default_factory=list)
+    stars: List[StarPosition] = field(default_factory=list)
+    constellations: List[ConstellationData] = field(default_factory=list)
+

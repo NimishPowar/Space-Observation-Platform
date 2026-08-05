@@ -1,13 +1,14 @@
+import os
 import requests
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass(frozen=True)
 class ApiClientConfig:
     """Configuration for talking to the backend API."""
 
-    base_url: str = "http://127.0.0.1:8000/api"
+    base_url: str = field(default_factory=lambda: os.getenv("BACKEND_URL", "http://127.0.0.1:8000/api"))
     timeout_seconds: int = 10
 
 
@@ -150,3 +151,38 @@ class ApiClient:
         return self.get_json(
             f"/learn/{object_name.strip().lower()}",
         )
+
+    def get_stars(self, latitude: float, longitude: float, timestamp: str | None = None, elevation: float | None = None, min_altitude: float = 0.0) -> list:
+        return self.get_json(
+            "/stars",
+            params={
+                "latitude": latitude,
+                "longitude": longitude,
+                "timestamp": timestamp,
+                "elevation": elevation,
+                "min_altitude": min_altitude,
+            },
+        )
+
+    def get_constellations(self, latitude: float, longitude: float, timestamp: str | None = None, elevation: float | None = None) -> list:
+        return self.get_json(
+            "/constellations",
+            params={
+                "latitude": latitude,
+                "longitude": longitude,
+                "timestamp": timestamp,
+                "elevation": elevation,
+            },
+        )
+
+    def get_skymap(self, latitude: float, longitude: float, timestamp: str | None = None, elevation: float | None = None) -> dict:
+        return self.get_json(
+            "/skymap",
+            params={
+                "latitude": latitude,
+                "longitude": longitude,
+                "timestamp": timestamp,
+                "elevation": elevation,
+            },
+        )
+

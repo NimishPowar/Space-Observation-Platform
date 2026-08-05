@@ -2,9 +2,19 @@
 
 from __future__ import annotations
 
-from astronomy_engine.core.domain import ObservationContext
+from typing import List, Optional
+
+from astronomy_engine.core.domain import (
+    ConstellationData,
+    MoonPhase,
+    ObservationContext,
+    PlanetPosition,
+    SkyMapData,
+    SolarState,
+    StarPosition,
+    VisibilityWindow,
+)
 from astronomy_engine.core.engine import AstronomyEngine
-from astronomy_engine.core.domain import MoonPhase, PlanetPosition, SolarState, VisibilityWindow
 
 
 class AstronomyUseCase:
@@ -17,7 +27,7 @@ class AstronomyUseCase:
         """Return a moon phase summary for the given context."""
         return self._engine.get_moon_summary(context)
 
-    def get_planetary_positions(self, context: ObservationContext) -> list[PlanetPosition]:
+    def get_planetary_positions(self, context: ObservationContext) -> List[PlanetPosition]:
         """Return visible planetary positions for the given context."""
         return self._engine.get_planetary_positions(context)
 
@@ -28,7 +38,29 @@ class AstronomyUseCase:
     def get_visibility_windows(
         self,
         context: ObservationContext,
-        object_names: list[str] | None = None,
-    ) -> list[VisibilityWindow]:
+        object_names: Optional[List[str]] = None,
+    ) -> List[VisibilityWindow]:
         """Return visibility windows for a set of requested objects."""
         return self._engine.get_visibility_windows(context, object_names)
+
+    def get_star_positions(
+        self,
+        context: ObservationContext,
+        min_altitude: float = 0.0,
+    ) -> List[StarPosition]:
+        """Return visible star positions for the given context."""
+        return self._engine.get_star_positions(context, min_altitude=min_altitude)
+
+    def get_constellations(
+        self,
+        context: ObservationContext,
+    ) -> List[ConstellationData]:
+        """Return visible constellations for the given context."""
+        return self._engine.get_constellations(context)
+
+    def get_skymap_data(
+        self,
+        context: ObservationContext,
+    ) -> SkyMapData:
+        """Return aggregated sky map data for the given context."""
+        return self._engine.get_skymap_data(context)
