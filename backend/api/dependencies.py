@@ -18,10 +18,12 @@ from astronomy_engine.core.engine import AstronomyEngine
 from backend.use_cases.astronomy_use_case import AstronomyUseCase
 from backend.use_cases.events_use_case import EventsUseCase
 from backend.use_cases.learn_use_case import LearnUseCase
+from backend.use_cases.nasa_apod_use_case import NasaApodUseCase
 from backend.use_cases.observation_planner import ObservationPlannerUseCase
 from database.repository import (
     CelestialEventRepository,
     EducationalContentRepository,
+    NasaApodRepository,
     PlanetRepository,
 )
 from database.session import DatabaseSessionManager
@@ -64,6 +66,11 @@ def get_celestial_event_repository(session: Session) -> CelestialEventRepository
     return CelestialEventRepository(session)
 
 
+def get_nasa_apod_repository(session: Session) -> NasaApodRepository:
+    """Return a NASA APOD repository bound to the current DB session."""
+    return NasaApodRepository(session)
+
+
 def get_astronomy_use_case() -> AstronomyUseCase:
     """Return a new AstronomyUseCase bound to the shared engine."""
     engine = get_engine()
@@ -87,3 +94,10 @@ def get_events_use_case(
 ) -> EventsUseCase:
     """Return an EventsUseCase bound to the current database session."""
     return EventsUseCase(event_repository=CelestialEventRepository(session))
+
+
+def get_nasa_apod_use_case(
+    session: Session = Depends(get_database_session),
+) -> NasaApodUseCase:
+    """Return a NasaApodUseCase bound to the current database session."""
+    return NasaApodUseCase(apod_repository=NasaApodRepository(session))

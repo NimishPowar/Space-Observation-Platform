@@ -1,4 +1,8 @@
-"""Observation planner page for the Streamlit frontend."""
+"""Observation planner page for the Streamlit frontend.
+
+Central hub for planning astronomical observations, viewing upcoming celestial events,
+and exploring NASA Astronomy Picture of the Day (APOD).
+"""
 
 from __future__ import annotations
 
@@ -37,69 +41,114 @@ def _build_event_rows(events: list[dict]) -> list[dict]:
 
 
 def render() -> None:
-    """Render the observation planner page with a city-first workflow and event recommendations."""
-    st.title("Observation Planner")
-    st.caption("What should I observe tonight?")
+    """Render the observation planner page with location-aware recommendations, APOD, and events."""
+    st.title("🌌 Observation Planner")
+    st.caption("Your central hub for planning night sky observations, tracking celestial events, and astronomy insights.")
 
-    latitude, longitude, location_label = render_location_selector()
-    timestamp = render_time_selector()
-    limit = st.slider("How many recommendations?", min_value=1, max_value=10, value=5)
-
-    if not st.button("Plan observation"):
-        return
+    tabs = st.tabs(["🎯 Observation Plan", "🖼️ NASA APOD", "📅 Celestial Events"])
 
     client = ApiClient()
-    try:
-        scores = events = None
 
-        def load_data() -> None:
-            nonlocal scores, events
-            scores = client.get_planner(
-                latitude=latitude,
-                longitude=longitude,
-                timestamp=timestamp,
-                elevation=0.0,
-                limit=limit,
-            )
+    # Tab 1: Observation Plan
+    with tabs[0]:
+        latitude, longitude, location_label = render_location_selector()
+        timestamp = render_time_selector()
+        limit = st.slider("How many recommendations?", min_value=1, max_value=10, value=5)
+
+        if st.button("Plan Observation", type="primary"):
             try:
-                events = client.get_events(
-                    latitude=latitude,
-                    longitude=longitude,
-                    timestamp=timestamp,
-                    limit=min(3, limit),
+                scores = None
+
+                def load_data() -> None:
+                    nonlocal scores
+                    scores = client.get_planner(
+                        latitude=latitude,
+                        longitude=longitude,
+                        timestamp=timestamp,
+                        elevation=0.0,
+                        limit=limit,
+                    )
+
+                render_loading_state(load_data)
+                render_status(f"Observation plan prepared for {location_label}.", kind="success")
+                render_metrics(
+                    [
+                        ("Location", location_label),
+                        ("Recommendations", str(len(scores or []))),
+                        ("Top Recommendation", (scores or [{}])[0].get("object_name", "N/A")),
+                    ]
                 )
-            except FrontendApiError:
-                events = None
 
-        render_loading_state(load_data)
-        render_status(f"Observation plan prepared for {location_label}.", kind="success")
-        render_metrics(
-            [
-                ("Location", location_label),
-                ("Tonight", str(limit)),
-                ("Best object", (scores or [{}])[0].get("object_name", "N/A")),
-            ]
-        )
+                render_section_heading("Best Observation Opportunities")
+                for score in scores or []:
+                    visibility_window = score.get("visibility_window") or {}
+                    col1, col2 = st.columns([3, 1])
+                    with col1:
+                        st.markdown(
+                            f"### {_star_rating(float(score.get('score', 0)))} {score.get('object_name', 'Observation')}"
+                        )
+                        st.write(score.get("score_reason", "Observation opportunity available."))
+                        st.caption(
+                            f"⏰ Best Window: {visibility_window.get('start', 'N/A')} → {visibility_window.get('end', 'N/A')}"
+                        )
+                    with col2:
+                        st.metric("Score", f"{float(score.get('score', 0)):.1f}/100")
+                    st.divider()
 
-        render_section_heading("Best Observation Opportunities")
-        for score in scores or []:
-            visibility_window = score.get("visibility_window") or {}
-            st.markdown(
-                f"### {_star_rating(float(score.get('score', 0)))} {score.get('object_name', 'Observation')}"
-            )
-            st.write(score.get("score_reason", "Observation opportunity available."))
-            st.caption(
-                f"Best Time: {visibility_window.get('start', 'N/A')} → {visibility_window.get('end', 'N/A')}"
-            )
-            st.markdown("---")
+            except FrontendApiError as exc:
+                render_error(str(exc))
 
-        render_section_heading("Upcoming Celestial Events")
-        if events:
-            render_table(_build_event_rows(events))
-        else:
-            st.info("Upcoming celestial event details are temporarily unavailable.")
-    except FrontendApiError as exc:
-        render_error(str(exc))
+    # Tab 2: NASA Astronomy Picture of the Day (APOD)
+    with tabs[1]:
+        st.markdown("### 📷 NASA Astronomy Picture of the Day")
+        st.caption("Sourced directly via the platform's backend NASA adapter and ETL storage pipeline.")
+
+        try:
+            recent_apods = client.get_apod_recent(limit=5)
+            if recent_apods:
+                latest = recent_apods[0]
+                st.subheader(latest.get("title", "NASA Astronomy Picture"))
+                st.caption(f"Date: {latest.get('apod_date', 'N/A')} | Source: NASA APOD")
+
+                img_url = latest.get("url")
+                if img_url and latest.get("media_type") == "image":
+                    st.image(img_url, use_column_width=True, caption=latest.get("title"))
+                elif img_url:
+                    st.video(img_url)
+
+                if latest.get("explanation"):
+                    with st.expander("📖 Read Explanation", expanded=True):
+                        st.write(latest.get("explanation"))
+
+                if latest.get("copyright_text"):
+                    st.caption(f"© Copyright: {latest.get('copyright_text')}")
+
+                if len(recent_apods) > 1:
+                    render_section_heading("Recent APOD Archive")
+                    cols = st.columns(min(3, len(recent_apods) - 1))
+                    for idx, apod in enumerate(recent_apods[1:4]):
+                        with cols[idx % len(cols)]:
+                            if apod.get("url") and apod.get("media_type") == "image":
+                                st.image(apod.get("url"), caption=apod.get("title"))
+                            st.caption(f"📅 {apod.get('apod_date')}")
+            else:
+                st.info("NASA APOD entries will appear here once populated by the ETL pipeline.")
+        except FrontendApiError:
+            st.info("NASA APOD service is connecting to the backend ETL storage.")
+
+    # Tab 3: Celestial Events
+    with tabs[2]:
+        st.markdown("### 🌟 Upcoming Celestial Events")
+        st.caption("Meteor showers, eclipses, planetary conjunctions, oppositions, equinoxes & solstices.")
+
+        try:
+            events = client.get_events(limit=10)
+            if events:
+                render_table(_build_event_rows(events))
+            else:
+                st.info("No upcoming events currently scheduled in the platform catalog.")
+        except FrontendApiError as exc:
+            st.info("Upcoming event details will load when backend services are active.")
 
 
 if __name__ == "__main__":

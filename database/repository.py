@@ -21,6 +21,7 @@ from database.models import (
     CelestialEvent,
     EducationalCategory,
     EducationalContent,
+    NasaApod,
     ObservationLog,
     Planet,
     User,
@@ -213,3 +214,41 @@ class UserRepository(SQLAlchemyRepository[User]):
     def get_by_username(self, username: str) -> User | None:
         statement = select(User).where(User.username == username)
         return self._session.scalar(statement)
+
+
+class NasaApodRepository(SQLAlchemyRepository[NasaApod]):
+    """Repository for NASA APOD cached entries."""
+
+    def __init__(self, session: Session) -> None:
+        super().__init__(session, NasaApod)
+
+    def get_by_date(self, apod_date: str) -> NasaApod | None:
+        """Get APOD entry by date string (YYYY-MM-DD)."""
+        statement = select(NasaApod).where(NasaApod.apod_date == apod_date)
+        return self._session.scalar(statement)
+
+    def get_latest(self, limit: int = 10) -> list[NasaApod]:
+        """Get the most recent APOD entries."""
+        statement = (
+            select(NasaApod)
+            .order_by(NasaApod.apod_date.desc())
+            .limit(limit)
+        )
+        return list(self._session.scalars(statement).all())
+
+    def upsert(self, entry: NasaApod) -> NasaApod:
+        """Insert or update an APOD entry by date."""
+        existing = self.get_by_date(entry.apod_date)
+        if existing is not None:
+            existing.title = entry.title
+            existing.explanation = entry.explanation
+            existing.url = entry.url
+            existing.hdurl = entry.hdurl
+            existing.media_type = entry.media_type
+            existing.copyright_text = entry.copyright_text
+            existing.thumbnail_url = entry.thumbnail_url
+            self._session.flush()
+            return existing
+        self._session.add(entry)
+        self._session.flush()
+        return entry

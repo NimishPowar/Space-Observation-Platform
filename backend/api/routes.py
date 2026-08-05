@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException, Query, Depends
 
 from astronomy_engine.core.domain import Location, ObservationContext
+from backend.schemas.apod_models import ApodResponse
 from backend.use_cases.astronomy_use_case import AstronomyUseCase
 from backend.schemas.models import (
     MoonResponse,
@@ -25,10 +26,12 @@ from backend.api.dependencies import (
     get_astronomy_use_case,
     get_events_use_case,
     get_learn_use_case,
+    get_nasa_apod_use_case,
     get_observation_planner_use_case,
 )
 from backend.use_cases.events_use_case import EventsUseCase
 from backend.use_cases.learn_use_case import LearnUseCase
+from backend.use_cases.nasa_apod_use_case import NasaApodUseCase
 from backend.use_cases.observation_planner import ObservationPlannerUseCase
 
 router = APIRouter()
@@ -213,3 +216,40 @@ def get_learn(
             detail=f"No educational content found for '{object_name}'",
         )
     return _serialize(content)
+
+
+@router.get("/apod/today", response_model=ApodResponse)
+def get_apod_today(
+    use_case: NasaApodUseCase = Depends(get_nasa_apod_use_case),
+):
+    apod = use_case.get_today()
+    if apod is None:
+        raise HTTPException(
+            status_code=404,
+            detail="No APOD entry found for today in the platform catalog.",
+        )
+    return _serialize(apod)
+
+
+@router.get("/apod/recent", response_model=List[ApodResponse])
+def get_apod_recent(
+    limit: int = Query(10, ge=1, le=50),
+    use_case: NasaApodUseCase = Depends(get_nasa_apod_use_case),
+):
+    apods = use_case.get_recent(limit=limit)
+    return [_serialize(a) for a in apods]
+
+
+@router.get("/apod/{target_date}", response_model=ApodResponse)
+def get_apod_by_date(
+    target_date: str,
+    use_case: NasaApodUseCase = Depends(get_nasa_apod_use_case),
+):
+    apod = use_case.get_by_date(target_date)
+    if apod is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No APOD entry found for date '{target_date}'.",
+        )
+    return _serialize(apod)
+

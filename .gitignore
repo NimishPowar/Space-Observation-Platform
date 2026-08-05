@@ -27,3 +27,7 @@ dist/
 
 # Data directories
 datasets/
+
+# Environment files
+.env
+

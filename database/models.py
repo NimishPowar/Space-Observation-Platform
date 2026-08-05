@@ -221,3 +221,32 @@ class ApplicationSetting(Base):
     )
 
     user: Mapped[User | None] = relationship(back_populates="application_settings")
+
+
+class NasaApod(Base):
+    """NASA Astronomy Picture of the Day entries cached from the APOD API."""
+
+    __tablename__ = "nasa_apod"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    apod_date: Mapped[str] = mapped_column(String(10), unique=True, nullable=False)
+    title: Mapped[str] = mapped_column(String(500), nullable=False)
+    explanation: Mapped[str | None] = mapped_column(Text, nullable=True)
+    url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    hdurl: Mapped[str | None] = mapped_column(Text, nullable=True)
+    media_type: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    copyright_text: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    thumbnail_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source_api: Mapped[str] = mapped_column(String(64), default="nasa_apod", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
