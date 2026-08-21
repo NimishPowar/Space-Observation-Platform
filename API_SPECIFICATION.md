@@ -1,119 +1,147 @@
 # API Specification
 
-Base path: `/api`
-
-## Astronomy (live calculations via Astronomy Engine)
-
-### GET /moon
-
-Returns moon phase information for a location and timestamp.
-
-Query parameters:
-
-- `latitude` (required)
-- `longitude` (required)
-- `timestamp` (optional, ISO-8601)
-- `elevation` (optional, meters)
+Base Path: `/api`
 
 ---
 
-### GET /planets
+## 🌌 Astronomy Engine Endpoints (Live Ephemeris Calculations)
 
-Returns visible planetary positions for a location and timestamp.
-
-Query parameters:
-
-- `latitude` (required)
-- `longitude` (required)
-- `timestamp` (optional, ISO-8601)
-- `elevation` (optional, meters)
-- `names` (optional, repeated query parameter)
+### `GET /api/moon`
+Returns lunar phase, illumination, phase angle, and rise/set visibility.
+- **Query Parameters**:
+  - `latitude` (float, required)
+  - `longitude` (float, required)
+  - `timestamp` (string, optional, ISO-8601)
+  - `elevation` (float, optional, default `0.0`)
 
 ---
 
-### GET /sun
-
-Returns solar state for a location and timestamp.
-
-Query parameters:
-
-- `latitude` (required)
-- `longitude` (required)
-- `timestamp` (optional, ISO-8601)
-- `elevation` (optional, meters)
+### `GET /api/planets`
+Returns positions (altitude, azimuth, RA, declination, distance, visibility) for planets.
+- **Query Parameters**:
+  - `latitude` (float, required)
+  - `longitude` (float, required)
+  - `timestamp` (string, optional, ISO-8601)
+  - `elevation` (float, optional, default `0.0`)
+  - `names` (list of strings, optional)
 
 ---
 
-### GET /visibility
-
-Returns visibility windows for requested objects.
-
-Query parameters:
-
-- `latitude` (required)
-- `longitude` (required)
-- `timestamp` (optional, ISO-8601)
-- `elevation` (optional, meters)
-- `names` (optional, repeated query parameter)
+### `GET /api/sun`
+Returns solar state, sunrise, sunset, solar noon, and twilight boundaries.
+- **Query Parameters**:
+  - `latitude` (float, required)
+  - `longitude` (float, required)
+  - `timestamp` (string, optional, ISO-8601)
+  - `elevation` (float, optional, default `0.0`)
 
 ---
 
-## Reference Data (MySQL-backed)
-
-### GET /events
-
-Returns upcoming celestial events from the database, ordered by start time.
-
-Query parameters:
-
-- `latitude` (required; reserved for future location-aware filtering)
-- `longitude` (required; reserved for future location-aware filtering)
-- `timestamp` (optional, ISO-8601; defaults to current UTC)
-- `limit` (optional, default `50`, max `200`)
-
-Response fields:
-
-- `event_id`
-- `name`
-- `category`
-- `event_type`
-- `description`
-- `start_time`
-- `end_time`
-- `visible_objects`
-- `magnitude`
-- `location`
+### `GET /api/stars`
+Returns visible star positions for sky mapping.
+- **Query Parameters**:
+  - `latitude` (float, required)
+  - `longitude` (float, required)
+  - `timestamp` (string, optional, ISO-8601)
+  - `elevation` (float, optional, default `0.0`)
+  - `min_altitude` (float, optional, default `0.0`)
+  - `max_magnitude` (float, optional, default `6.0`)
+  - `limit` (int, optional, default `500`)
 
 ---
 
-### GET /learn/{object_name}
-
-Returns educational content for an object name or slug from the database.
-
-Path parameters:
-
-- `object_name` — slug (for example `mars-overview`) or resolvable object name (for example `mars`)
-
-Response fields:
-
-- `object_name`
-- `slug`
-- `title`
-- `excerpt`
-- `body`
-- `category_slug`
-- `category_name`
-- `source_url`
-- `is_featured`
-
-Returns `404` when no matching educational content exists.
+### `GET /api/constellations`
+Returns constellation line segments and star connectivity for sky mapping.
+- **Query Parameters**:
+  - `latitude` (float, required)
+  - `longitude` (float, required)
+  - `timestamp` (string, optional, ISO-8601)
+  - `elevation` (float, optional, default `0.0`)
 
 ---
 
-## Analytics
+### `GET /api/skymap`
+Combined payload of stars and constellation line connections for sky maps.
+- **Query Parameters**:
+  - `latitude` (float, required)
+  - `longitude` (float, required)
+  - `timestamp` (string, optional, ISO-8601)
+  - `elevation` (float, optional, default `0.0`)
 
-### GET /analytics
+---
 
-Returns dashboard data.
+### `GET /api/visibility`
+Returns computed observation visibility windows for requested objects.
+- **Query Parameters**:
+  - `latitude` (float, required)
+  - `longitude` (float, required)
+  - `timestamp` (string, optional, ISO-8601)
+  - `elevation` (float, optional, default `0.0`)
+  - `names` (list of strings, optional)
 
-Status: not implemented yet.
+---
+
+### `GET /api/planner`
+Evaluates target visibility scores and computes optimal observation windows.
+- **Query Parameters**:
+  - `latitude` (float, required)
+  - `longitude` (float, required)
+  - `timestamp` (string, optional, ISO-8601)
+  - `elevation` (float, optional, default `0.0`)
+  - `target_names` (list of strings, optional)
+  - `min_altitude` (float, optional, default `15.0`)
+
+---
+
+## 🖼️ NASA APOD Endpoints
+
+### `GET /api/apod/today`
+Returns today's NASA Astronomy Picture of the Day (auto-fetches via ETL if missing).
+
+### `GET /api/apod/recent`
+Returns recent APOD entries from MySQL.
+- **Query Parameters**: `limit` (int, default `10`)
+
+### `GET /api/apod/{target_date}`
+Returns APOD entry for a specific date (`YYYY-MM-DD`).
+
+---
+
+## 💡 Discovery Hub Endpoints
+
+### `GET /api/discovery/categories`
+Returns list of educational taxonomy categories.
+
+### `GET /api/discovery/topics`
+Searches Astronomy Basics educational topics.
+- **Query Parameters**:
+  - `query` (string, optional)
+  - `category` (string, optional, slug)
+  - `limit` (int, default `50`)
+
+### `GET /api/discovery/featured`
+Returns featured educational articles.
+
+### `GET /api/discovery/topic/{slug}`
+Returns detailed educational article by slug.
+
+### `GET /api/discovery/moon-phase`
+Returns calculated lunar phase statistics for the Moon Phase Simulator.
+- **Query Parameters**:
+  - `timestamp` (string, optional, ISO-8601)
+  - `day_offset` (int, optional, default `0`)
+
+---
+
+## 📅 Reference Data Endpoints
+
+### `GET /api/events`
+Returns upcoming celestial events from MySQL ordered by start time.
+- **Query Parameters**:
+  - `latitude` (float, required)
+  - `longitude` (float, required)
+  - `timestamp` (string, optional, ISO-8601)
+  - `limit` (int, default `50`)
+
+### `GET /api/learn/{object_name}`
+Returns educational content for an object name or slug.
