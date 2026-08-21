@@ -9,17 +9,31 @@ from astronomy_engine.implementations import (
     AdapterSunService,
     AdapterVisibilityService,
     SkyfieldRuntimeAdapter,
+    StubMoonService,
+    StubPlanetService,
+    StubSunService,
+    StubVisibilityService,
 )
 from astronomy_engine.services import DefaultConstellationService, DefaultStarService
 
 
-def create_astronomy_engine() -> AstronomyEngine:
-    """Create a composed AstronomyEngine with runtime Skyfield services."""
-    adapter = SkyfieldRuntimeAdapter()
-    adapter.initialize()
-
+def create_astronomy_engine(use_stubs: bool = False) -> AstronomyEngine:
+    """Create a composed AstronomyEngine with runtime Skyfield services or stub test doubles."""
     star_service = DefaultStarService()
     constellation_service = DefaultConstellationService(star_service=star_service)
+
+    if use_stubs:
+        return AstronomyEngine(
+            moon_service=StubMoonService(),
+            planet_service=StubPlanetService(),
+            sun_service=StubSunService(),
+            visibility_service=StubVisibilityService(),
+            star_service=star_service,
+            constellation_service=constellation_service,
+        )
+
+    adapter = SkyfieldRuntimeAdapter()
+    adapter.initialize()
 
     return AstronomyEngine(
         moon_service=AdapterMoonService(adapter=adapter),
