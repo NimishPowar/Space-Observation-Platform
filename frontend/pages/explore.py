@@ -219,8 +219,8 @@ def render() -> None:
         st.subheader("Quick Actions")
         action_columns = st.columns(3)
         action_columns[0].button("Plan Tonight")
-        action_columns[1].button("Learn about the Moon")
-        action_columns[2].button("Learn about Mars")
+        action_columns[1].button("Discover Moon")
+        action_columns[2].button("Discover Mars")
     except FrontendApiError as exc:
         render_error(str(exc))
 

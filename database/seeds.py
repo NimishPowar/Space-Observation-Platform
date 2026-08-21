@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from sqlalchemy.orm import Session
 
-from database.models import EducationalCategory, EducationalContent, Planet
+from database.models import CelestialEvent, EducationalCategory, EducationalContent, Planet
 
 
 def seed_planets(session: Session) -> None:
@@ -390,10 +390,86 @@ Jupiter is a gas giant primarily composed of hydrogen and helium. Its intense gr
             session.add(EducationalContent(**payload))
 
 
+def seed_celestial_events(session: Session) -> None:
+    """Seed comprehensive upcoming celestial events dynamically relative to current date."""
+    from datetime import datetime, timedelta, timezone
+    now = datetime.now(timezone.utc)
+    planet_map = {p.name.lower(): p.id for p in session.query(Planet).all()}
+
+    events = [
+        {
+            "event_type": "Meteor Shower",
+            "title": "Perseids Meteor Shower Peak",
+            "description": "One of the brightest meteor showers of the year, producing up to 100 meteors per hour at peak under dark skies.",
+            "starts_at": now + timedelta(days=2),
+            "ends_at": now + timedelta(days=3),
+            "is_recurring": True,
+            "source_url": "https://science.nasa.gov/solar-system/meteors-meteorites/perseids/",
+        },
+        {
+            "event_type": "Conjunction",
+            "title": "Moon and Jupiter Conjunction",
+            "description": "The crescent Moon and bright gas giant Jupiter pass within 3 degrees of each other in the early evening sky.",
+            "starts_at": now + timedelta(days=5),
+            "ends_at": now + timedelta(days=6),
+            "planet_id": planet_map.get("jupiter"),
+            "is_recurring": False,
+            "source_url": "https://science.nasa.gov/skywatching/",
+        },
+        {
+            "event_type": "Opposition",
+            "title": "Saturn at Opposition",
+            "description": "Saturn reaches its closest approach to Earth, shining at its brightest with its ring system fully illuminated.",
+            "starts_at": now + timedelta(days=12),
+            "ends_at": now + timedelta(days=13),
+            "planet_id": planet_map.get("saturn"),
+            "is_recurring": True,
+            "source_url": "https://science.nasa.gov/saturn/",
+        },
+        {
+            "event_type": "Meteor Shower",
+            "title": "Orionids Meteor Shower Peak",
+            "description": "Fast meteors produced by debris left behind by Halley's Comet, known for bright fireballs.",
+            "starts_at": now + timedelta(days=25),
+            "ends_at": now + timedelta(days=26),
+            "is_recurring": True,
+            "source_url": "https://science.nasa.gov/solar-system/meteors-meteorites/orionids/",
+        },
+        {
+            "event_type": "Conjunction",
+            "title": "Venus and Mars Close Conjunction",
+            "description": "Terrestrial neighbors Venus and Mars appear side-by-side in the western twilight sky.",
+            "starts_at": now + timedelta(days=35),
+            "ends_at": now + timedelta(days=36),
+            "planet_id": planet_map.get("venus"),
+            "is_recurring": False,
+            "source_url": "https://science.nasa.gov/skywatching/",
+        },
+        {
+            "event_type": "Meteor Shower",
+            "title": "Geminids Meteor Shower Peak",
+            "description": "The king of meteor showers, producing up to 120 multi-colored meteors per hour from asteroid 3200 Phaethon.",
+            "starts_at": now + timedelta(days=55),
+            "ends_at": now + timedelta(days=56),
+            "is_recurring": True,
+            "source_url": "https://science.nasa.gov/solar-system/meteors-meteorites/geminids/",
+        },
+    ]
+
+    for payload in events:
+        existing = session.query(CelestialEvent).filter_by(title=payload["title"]).first()
+        if existing is None:
+            session.add(CelestialEvent(**payload))
+        else:
+            existing.starts_at = payload["starts_at"]
+            existing.ends_at = payload["ends_at"]
+
+
 def seed_reference_data(session: Session) -> None:
     """Run all static seeders into one session transaction."""
     seed_planets(session)
     seed_educational_categories(session)
     session.flush()
     seed_educational_content(session)
+    seed_celestial_events(session)
     session.commit()

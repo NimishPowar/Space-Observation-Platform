@@ -35,16 +35,40 @@ class NasaApodUseCase:
         self._repo = apod_repository
 
     def get_today(self) -> Optional[ApodEntry]:
-        """Return today's APOD entry from the database."""
+        """Return today's APOD entry from the database. Auto-runs ETL pipeline if missing."""
         today_str = date.today().isoformat()
         record = self._repo.get_by_date(today_str)
         if record is None:
+            # Trigger ETL pipeline to fetch today's APOD from NASA API & save to MySQL
+            try:
+                from etl.pipelines.nasa_apod_pipeline import NasaApodPipeline
+                NasaApodPipeline().run_today()
+                record = self._repo.get_by_date(today_str)
+            except Exception:
+                pass
+
+        if record is None:
+            # Fallback to the latest available APOD record in DB
+            latest = self._repo.get_latest(limit=1)
+            if latest:
+                return self._to_entry(latest[0])
             return None
+
         return self._to_entry(record)
 
     def get_by_date(self, target_date: str) -> Optional[ApodEntry]:
-        """Return APOD entry for a specific date (YYYY-MM-DD)."""
+        """Return APOD entry for a specific date (YYYY-MM-DD). Auto-runs ETL if missing."""
         record = self._repo.get_by_date(target_date)
+        if record is None:
+            try:
+                from etl.pipelines.nasa_apod_pipeline import NasaApodPipeline
+                from datetime import datetime as dt
+                d = dt.strptime(target_date, "%Y-%m-%d").date()
+                NasaApodPipeline().run(target_date=d)
+                record = self._repo.get_by_date(target_date)
+            except Exception:
+                pass
+
         if record is None:
             return None
         return self._to_entry(record)
@@ -52,6 +76,13 @@ class NasaApodUseCase:
     def get_recent(self, limit: int = 10) -> List[ApodEntry]:
         """Return the most recent APOD entries."""
         records = self._repo.get_latest(limit=limit)
+        if not records:
+            try:
+                from etl.pipelines.nasa_apod_pipeline import NasaApodPipeline
+                NasaApodPipeline().run_last_n_days(limit)
+                records = self._repo.get_latest(limit=limit)
+            except Exception:
+                pass
         return [self._to_entry(r) for r in records]
 
     @staticmethod
