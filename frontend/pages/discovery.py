@@ -60,7 +60,8 @@ def render_solar_system_view() -> None:
     render_section_heading("3D Solar System View")
     st.caption("Drag to orbit, scroll to zoom, and click any planet to inspect its real-time 3D trajectory and properties.")
 
-    components.iframe("https://nimishpowar.github.io/Solar-system/", height=700, scrolling=True)
+    # Render local self-hosted 3D solar system visualization from /static/solarsystem/
+    components.iframe("http://127.0.0.1:8000/static/solarsystem/", height=700, scrolling=True)
 
 
 def render_moon_simulator(client: ApiClient) -> None:
@@ -68,8 +69,12 @@ def render_moon_simulator(client: ApiClient) -> None:
     render_section_heading("3D Moon Phase Simulator")
     st.caption("Physically-driven 3D directional lighting Earth-Moon model paired with backend-calculated phase statistics.")
 
-    # 3D Interactive WebGL Viewer
-    components.iframe("https://nimishpowar.github.io/MoonPhase/", height=550, scrolling=True)
+    # Render 3D Moon Phase WebGL Viewer (Local / Hosted)
+    from pathlib import Path
+    moonphase_dir = Path(__file__).resolve().parent.parent.parent / "moonphase"
+    moonphase_url = "http://127.0.0.1:8000/static/moonphase/" if (moonphase_dir.is_dir() and any(moonphase_dir.iterdir())) else "https://nimishpowar.github.io/MoonPhase/"
+    
+    components.iframe(moonphase_url, height=550, scrolling=True)
 
     st.divider()
     st.subheader("Calculated Lunar Phase Metrics")

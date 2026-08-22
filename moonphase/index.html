@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Moon Phases — Sun / Earth / Moon</title>
+<link rel="stylesheet" href="style.css" />
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+
+  <canvas id="main-canvas"></canvas>
+
+  <!-- "Money shot" inset: fixed camera on Earth's surface looking at the Moon -->
+  <div id="inset">
+    <canvas id="inset-canvas"></canvas>
+    <div id="inset-label">Earth Observer — the Moon as we see it</div>
+  </div>
+
+  <header id="masthead">
+    <div class="title-block">
+      <span class="eyebrow">Orrery / Live Geometry</span>
+      <h1>Sun · Earth · Moon</h1>
+    </div>
+    <div class="phase-readout">
+      <div class="phase-dial" id="phase-dial" aria-hidden="true">
+        <svg viewBox="0 0 100 100">
+          <circle class="dial-ring" cx="50" cy="50" r="46"></circle>
+          <clipPath id="moon-clip"><circle cx="50" cy="50" r="40"></circle></clipPath>
+          <g clip-path="url(#moon-clip)">
+            <rect id="dial-dark" x="0" y="0" width="100" height="100" fill="#0b1020"></rect>
+            <path id="dial-terminator" d="" fill="#e8e3d6"></path>
+          </g>
+        </svg>
+      </div>
+      <div class="phase-text">
+        <div class="phase-name" id="phase-name">New Moon</div>
+        <div class="phase-meta">
+          <span id="phase-illum">0% illuminated</span>
+          <span class="dot">·</span>
+          <span id="phase-day">day 0.0 / 29.53</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section id="controls" aria-label="Simulation controls">
+
+    <div class="control-group">
+      <span class="group-label">Scale</span>
+      <div class="segmented" id="scale-toggle">
+        <button data-scale="visual" class="active">Visual</button>
+        <button data-scale="true">True</button>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <span class="group-label">Camera</span>
+      <div class="segmented" id="camera-toggle">
+        <button data-cam="god" class="active">God's Eye</button>
+        <button data-cam="earth">Earth Observer</button>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <span class="group-label">Time</span>
+      <div class="time-row">
+        <button id="play-pause" class="icon-btn" aria-label="Play or pause">❚❚</button>
+        <div class="segmented speeds" id="speed-toggle">
+          <button data-speed="1">Real-time</button>
+          <button data-speed="3600">1 hr/s</button>
+          <button data-speed="21600">6 hr/s</button>
+          <button data-speed="86400" class="active">1 day/s</button>
+          <button data-speed="432000">5 day/s</button>
+        </div>
+      </div>
+      <button id="sync-now" class="now-btn">Sync to tonight's real Moon</button>
+      <div class="now-readout" id="now-readout"></div>
+    </div>
+
+    <div class="control-group wide">
+      <span class="group-label">Scrub lunar cycle <em>(29.53 days)</em></span>
+      <input type="range" id="cycle-slider" min="0" max="1000" value="0" step="1" />
+    </div>
+
+  </section>
+
+  <div id="hint">Drag to orbit · Scroll to zoom · Scrub the slider to jump to any phase</div>
+
+  <script type="module" src="script.js"></script>
+</body>
+</html>
