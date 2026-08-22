@@ -29,11 +29,15 @@ def render() -> None:
     """Render the Explore dashboard using the backend API surface."""
     inject_astronomy_styles()
 
-    st.title("✨ Explore the Night Sky")
+    st.markdown("### ✨ Explore the Night Sky")
     st.caption("Real-time interactive sky map, visible planets, bright stars, and constellation guide.")
 
-    latitude, longitude, location_label = render_location_selector()
-    timestamp = render_time_selector()
+    col_loc, col_time = st.columns([1, 1])
+    with col_loc:
+        latitude, longitude, location_label = render_location_selector()
+    with col_time:
+        timestamp = render_time_selector()
+
     elevation = 0.0
 
     client = ApiClient()

@@ -11,6 +11,7 @@ import streamlit as st
 
 from frontend.client import ApiClient, FrontendApiError
 from frontend.ui import (
+    inject_astronomy_styles,
     render_error,
     render_loading_state,
     render_location_selector,
@@ -66,11 +67,14 @@ def render() -> None:
 
     # Tab 1: Observation Plan
     with tabs[0]:
-        latitude, longitude, location_label = render_location_selector()
-        timestamp = render_time_selector()
-        limit = st.slider("How many recommendations?", min_value=1, max_value=10, value=5)
+        col_loc, col_time = st.columns([1, 1])
+        with col_loc:
+            latitude, longitude, location_label = render_location_selector()
+        with col_time:
+            timestamp = render_time_selector()
+            limit = st.slider("How many recommendations?", min_value=1, max_value=10, value=5)
 
-        if st.button("Plan Observation", type="primary"):
+        if st.button("Plan Observation Session", type="primary"):
             try:
                 scores = None
 

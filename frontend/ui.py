@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime, time, timedelta, timezone
-from typing import Callable, List, Dict, Any, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -11,65 +11,202 @@ import streamlit as st
 
 
 def inject_astronomy_styles() -> None:
-    """Inject custom CSS for dark glassmorphic aesthetics and modern typography."""
+    """Inject custom CSS for futuristic deep space glassmorphic aesthetics and top navigation bar."""
     css = """
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Inter:wght@300;400;500;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+    /* Core Page & Background */
+    .stApp {
+        background: radial-gradient(circle at 50% -20%, #1e1b4b 0%, #090d16 50%, #030712 100%) !important;
+        color: #f8fafc !important;
+        font-family: 'Inter', sans-serif;
+    }
 
     html, body, [class*="css"] {
         font-family: 'Inter', sans-serif;
     }
 
+    /* Headings */
     h1, h2, h3, h4, .main-title {
         font-family: 'Outfit', sans-serif !important;
         font-weight: 700 !important;
-        letter-spacing: -0.02em;
+        letter-spacing: -0.025em !important;
+        background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 50%, #38bdf8 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
     }
 
-    /* Glassmorphism containers */
+    h1 {
+        font-size: 2.3rem !important;
+        margin-bottom: 0.2rem !important;
+    }
+
+    h2, h3 {
+        font-family: 'Space Grotesk', sans-serif !important;
+        font-weight: 600 !important;
+    }
+
+    /* Top Navbar Radio Group Styling */
+    div[data-testid="stRadio"] > div[role="radiogroup"] {
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: flex-end !important;
+        align-items: center !important;
+        gap: 10px !important;
+        background: rgba(15, 23, 42, 0.75) !important;
+        padding: 6px 10px !important;
+        border-radius: 14px !important;
+        border: 1px solid rgba(56, 189, 248, 0.2) !important;
+        backdrop-filter: blur(16px) !important;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37) !important;
+    }
+
+    div[data-testid="stRadio"] > div[role="radiogroup"] label {
+        background: transparent !important;
+        padding: 8px 22px !important;
+        border-radius: 10px !important;
+        font-family: 'Space Grotesk', sans-serif !important;
+        font-weight: 600 !important;
+        font-size: 0.98rem !important;
+        color: #94a3b8 !important;
+        cursor: pointer !important;
+        transition: all 0.25s ease-in-out !important;
+        border: 1px solid transparent !important;
+        margin: 0 !important;
+    }
+
+    div[data-testid="stRadio"] > div[role="radiogroup"] label:hover {
+        color: #38bdf8 !important;
+        background: rgba(56, 189, 248, 0.12) !important;
+        border-color: rgba(56, 189, 248, 0.2) !important;
+    }
+
+    div[data-testid="stRadio"] > div[role="radiogroup"] label[data-checked="true"],
+    div[data-testid="stRadio"] > div[role="radiogroup"] div[aria-checked="true"] {
+        background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
+        color: #ffffff !important;
+        border-color: rgba(56, 189, 248, 0.5) !important;
+        box-shadow: 0 0 16px rgba(56, 189, 248, 0.45) !important;
+    }
+
+    /* Hide standard radio dot indicator */
+    div[data-testid="stRadio"] > div[role="radiogroup"] label div[data-testid="stMarkdownContainer"] {
+        font-family: 'Space Grotesk', sans-serif !important;
+    }
+
+    /* Glassmorphic Metric Cards */
     div[data-testid="stMetric"] {
         background: rgba(15, 23, 42, 0.65) !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
-        border-radius: 12px !important;
-        padding: 14px 18px !important;
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37) !important;
-        backdrop-filter: blur(8px) !important;
+        border: 1px solid rgba(56, 189, 248, 0.18) !important;
+        border-radius: 14px !important;
+        padding: 16px 20px !important;
+        box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.1) !important;
+        backdrop-filter: blur(12px) !important;
+        transition: transform 0.2s ease, border-color 0.2s ease !important;
+    }
+
+    div[data-testid="stMetric"]:hover {
+        transform: translateY(-2px);
+        border-color: rgba(56, 189, 248, 0.4) !important;
     }
 
     div[data-testid="stMetric"] label {
         color: #94a3b8 !important;
-        font-size: 0.85rem !important;
-        font-weight: 500 !important;
+        font-family: 'Space Grotesk', sans-serif !important;
+        font-size: 0.82rem !important;
+        font-weight: 600 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.06em !important;
     }
 
     div[data-testid="stMetric"] div[data-testid="stMetricValue"] {
         color: #38bdf8 !important;
-        font-size: 1.4rem !important;
+        font-family: 'Outfit', sans-serif !important;
+        font-size: 1.6rem !important;
         font-weight: 700 !important;
+        text-shadow: 0 0 20px rgba(56, 189, 248, 0.3) !important;
     }
 
-    /* Custom buttons */
+    /* Tabs Styling */
+    button[data-baseweb="tab"] {
+        font-family: 'Space Grotesk', sans-serif !important;
+        font-weight: 600 !important;
+        font-size: 1rem !important;
+        color: #94a3b8 !important;
+        background: transparent !important;
+        border-radius: 8px 8px 0 0 !important;
+        padding: 10px 22px !important;
+        transition: all 0.2s ease !important;
+    }
+
+    button[data-baseweb="tab"]:hover {
+        color: #38bdf8 !important;
+        background: rgba(56, 189, 248, 0.08) !important;
+    }
+
+    button[aria-selected="true"] {
+        color: #ffffff !important;
+        border-bottom: 3px solid #38bdf8 !important;
+        background: rgba(56, 189, 248, 0.12) !important;
+    }
+
+    /* Custom Input Fields */
+    input[type="text"], div[data-baseweb="select"] > div {
+        background: rgba(15, 23, 42, 0.8) !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        border-radius: 10px !important;
+        color: #f8fafc !important;
+        font-family: 'Inter', sans-serif !important;
+    }
+
+    /* Custom Buttons */
     div.stButton > button {
-        border-radius: 8px !important;
+        border-radius: 10px !important;
         background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
-        color: #e2e8f0 !important;
-        border: 1px solid rgba(56, 189, 248, 0.25) !important;
+        color: #f1f5f9 !important;
+        border: 1px solid rgba(56, 189, 248, 0.3) !important;
+        font-family: 'Space Grotesk', sans-serif !important;
+        font-weight: 600 !important;
+        padding: 0.5rem 1.2rem !important;
         transition: all 0.25s ease-in-out !important;
+        box-shadow: 0 4px 14px 0 rgba(0, 0, 0, 0.3) !important;
     }
 
     div.stButton > button:hover {
         border-color: #38bdf8 !important;
-        box-shadow: 0 0 12px rgba(56, 189, 248, 0.4) !important;
+        background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
+        box-shadow: 0 0 20px rgba(56, 189, 248, 0.5) !important;
         color: #ffffff !important;
+        transform: translateY(-1px);
+    }
+
+    /* Info / Warning / Success Alerts */
+    div.stAlert {
+        border-radius: 12px !important;
+        backdrop-filter: blur(10px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    }
+
+    /* Code & Telemetry */
+    code, pre {
+        font-family: 'JetBrains Mono', monospace !important;
+    }
+
+    /* Divider */
+    hr {
+        border-color: rgba(255, 255, 255, 0.08) !important;
     }
     </style>
     """
     st.markdown(css, unsafe_allow_html=True)
 
 
-def render_section_heading(title: str) -> None:
-    """Render a simple heading for a page section."""
-    st.subheader(title)
+def render_section_heading(title: str, caption: Optional[str] = None) -> None:
+    """Render a styled heading for a page section with optional caption."""
+    st.markdown(f"### {title}")
+    if caption:
+        st.caption(caption)
 
 
 def render_status(message: str, *, kind: str = "info") -> None:
@@ -91,7 +228,7 @@ def render_error(message: str) -> None:
 
 def render_loading_state(action: Callable[[], None]) -> None:
     """Show a spinner while an operation is in progress."""
-    with st.spinner("Loading data..."):
+    with st.spinner("✨ Fetching astronomical data..."):
         action()
 
 
@@ -116,18 +253,21 @@ def render_table(records: list[dict]) -> None:
 
 
 def render_location_selector() -> tuple[float, float, str]:
-    """Render a global city selector in the sidebar and persist the selected coordinates in session state."""
+    """Render a location selector widget and persist coordinates in session state."""
     from frontend.client import ApiClient, FrontendApiError
 
     city_query = st.session_state.get("location_query", "Mumbai")
     location_label = st.session_state.get("location_label", "Mumbai")
-    latitude = float(st.session_state.get("location_latitude", 12.5))
-    longitude = float(st.session_state.get("location_longitude", 77.5))
+    latitude = float(st.session_state.get("location_latitude", 19.0760))
+    longitude = float(st.session_state.get("location_longitude", 72.8777))
 
-    with st.sidebar:
-        st.subheader("Current Location")
-        new_query = st.text_input("Search city", value=city_query, key="location_query")
-        if st.button("Resolve city"):
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        new_query = st.text_input("🔍 Observer Location City", value=city_query, key="location_query_top")
+    with col2:
+        st.write("")
+        st.write("")
+        if st.button("Set Location", use_container_width=True):
             try:
                 client = ApiClient()
                 match = client.search_city(new_query)[0]
@@ -137,18 +277,18 @@ def render_location_selector() -> tuple[float, float, str]:
                 st.session_state["location_latitude"] = latitude
                 st.session_state["location_longitude"] = longitude
                 st.session_state["location_label"] = location_label
+                st.session_state["location_query"] = new_query
                 st.success(f"Location set to {location_label}.")
             except FrontendApiError as exc:
                 st.error(str(exc))
 
-        st.caption(f"📍 {location_label}")
-
+    st.caption(f"📍 **Current Observation Coordinates**: {location_label} (`{latitude:.2f}° N, {longitude:.2f}° E`)")
     return latitude, longitude, location_label
 
 
 def render_time_selector() -> str | None:
     """Render a friendly time selection widget and return an ISO 8601 string."""
-    when_mode = st.radio("When?", ["Right Now", "Tonight", "Pick Date & Time"], horizontal=True)
+    when_mode = st.radio("⏰ Observation Timestamp", ["Right Now", "Tonight", "Pick Date & Time"], horizontal=True)
 
     if when_mode == "Right Now":
         return datetime.now(timezone.utc).isoformat()
@@ -159,8 +299,11 @@ def render_time_selector() -> str | None:
             tonight += timedelta(days=1)
         return tonight.isoformat()
 
-    selected_date = st.date_input("Date", value=date.today())
-    selected_time = st.time_input("Time", value=time(20, 30))
+    col1, col2 = st.columns(2)
+    with col1:
+        selected_date = st.date_input("Date", value=date.today())
+    with col2:
+        selected_time = st.time_input("Time", value=time(20, 30))
     selected_dt = datetime.combine(selected_date, selected_time, tzinfo=timezone.utc)
     return selected_dt.isoformat()
 
@@ -199,7 +342,7 @@ def render_night_sky_map(
                                 r=[r1, r2],
                                 theta=[az1, az2],
                                 mode="lines",
-                                line=dict(color="rgba(56, 189, 248, 0.4)", width=1.5, dash="dot"),
+                                line=dict(color="rgba(56, 189, 248, 0.45)", width=1.5, dash="dot"),
                                 hoverinfo="skip",
                                 showlegend=False,
                             )
@@ -229,8 +372,8 @@ def render_night_sky_map(
                     marker=dict(
                         size=sizes,
                         color=colors,
-                        opacity=0.9,
-                        line=dict(color="rgba(255, 255, 255, 0.4)", width=1),
+                        opacity=0.95,
+                        line=dict(color="rgba(255, 255, 255, 0.6)", width=1),
                     ),
                     text=hover_text,
                     hoverinfo="text",
@@ -268,24 +411,19 @@ def render_night_sky_map(
                     theta=theta_planets,
                     mode="markers+text",
                     marker=dict(
-                        size=14,
+                        size=15,
                         color=p_colors,
                         symbol="circle",
                         line=dict(color="#ffffff", width=2),
                     ),
                     text=p_names,
                     textposition="top center",
-                    textfont=dict(color="#f8fafc", size=12, family="Outfit"),
+                    textfont=dict(color="#f8fafc", size=12, family="Space Grotesk"),
                     hovertext=p_text,
                     hoverinfo="text",
                     name="Planets",
                 )
             )
-
-    # 4. Moon (if visible)
-    if moon and moon.get("phase_name"):
-        # We can add Moon marker if altitude is present in context or default placement
-        pass
 
     # Layout configuration
     fig.update_layout(
@@ -296,7 +434,7 @@ def render_night_sky_map(
                 tickvals=[0, 30, 60, 90],
                 ticktext=["Zenith (90°)", "60°", "30°", "Horizon (0°)"],
                 color="#64748b",
-                gridcolor="rgba(255, 255, 255, 0.08)",
+                gridcolor="rgba(56, 189, 248, 0.12)",
                 showline=False,
             ),
             angularaxis=dict(
@@ -304,14 +442,14 @@ def render_night_sky_map(
                 rotation=90,  # 0 deg (North) at top
                 tickvals=[0, 45, 90, 135, 180, 225, 270, 315],
                 ticktext=["<b>N</b>", "NE", "<b>E</b>", "SE", "<b>S</b>", "SW", "<b>W</b>", "NW"],
-                color="#94a3b8",
-                gridcolor="rgba(255, 255, 255, 0.08)",
-                linecolor="rgba(255, 255, 255, 0.15)",
+                color="#38bdf8",
+                gridcolor="rgba(56, 189, 248, 0.12)",
+                linecolor="rgba(56, 189, 248, 0.25)",
             ),
-            bgcolor="#090d16",
+            bgcolor="#050811",
         ),
-        paper_bgcolor="#090d16",
-        plot_bgcolor="#090d16",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
         showlegend=True,
         legend=dict(
             orientation="h",
@@ -319,10 +457,10 @@ def render_night_sky_map(
             y=-0.15,
             xanchor="center",
             x=0.5,
-            font=dict(color="#94a3b8"),
+            font=dict(color="#94a3b8", family="Space Grotesk"),
         ),
         margin=dict(l=40, r=40, t=40, b=60),
-        height=550,
+        height=580,
     )
 
     st.plotly_chart(fig, use_container_width=True)
