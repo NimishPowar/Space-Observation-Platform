@@ -637,6 +637,32 @@ document.getElementById('zoomReset').addEventListener('click', () => {
   controls.update();
 });
 
+/* ---------- Fullscreen ---------- */
+const fullscreenBtn = document.getElementById('fullscreenBtn');
+if (fullscreenBtn) {
+  fullscreenBtn.addEventListener('click', () => {
+    if (!document.fullscreenElement) {
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen();
+      } else if (document.documentElement.webkitRequestFullscreen) {
+        document.documentElement.webkitRequestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
+    }
+  });
+
+  const updateFullscreenBtn = () => {
+    fullscreenBtn.textContent = document.fullscreenElement ? '🗗 Exit Fullscreen' : '⛶ Fullscreen';
+  };
+  document.addEventListener('fullscreenchange', updateFullscreenBtn);
+  document.addEventListener('webkitfullscreenchange', updateFullscreenBtn);
+}
+
 /* ---------- info panel + camera fly-to-focus ---------- */
 const infoPanel = document.getElementById('infoPanel');
 const infoName = document.getElementById('infoName');

@@ -630,6 +630,31 @@ document.getElementById('sync-now').addEventListener('click', () => {
   nowReadout.textContent = `Synced to ${stamp} — ${name}, ${Math.round(illum * 100)}%`;
 });
 
+const fullscreenBtn = document.getElementById('fullscreen-btn');
+if (fullscreenBtn) {
+  fullscreenBtn.addEventListener('click', () => {
+    if (!document.fullscreenElement) {
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen();
+      } else if (document.documentElement.webkitRequestFullscreen) {
+        document.documentElement.webkitRequestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
+    }
+  });
+
+  const updateFullscreenBtn = () => {
+    fullscreenBtn.textContent = document.fullscreenElement ? '🗗 Exit Fullscreen' : '⛶ Fullscreen';
+  };
+  document.addEventListener('fullscreenchange', updateFullscreenBtn);
+  document.addEventListener('webkitfullscreenchange', updateFullscreenBtn);
+}
+
 const slider = document.getElementById('cycle-slider');
 let scrubbing = false;
 let wasPlayingBeforeScrub = false;

@@ -55,13 +55,30 @@ def render_astronomy_basics(client: ApiClient) -> None:
         st.link_button("🌐 Learn More (NASA Science)", selected_topic["source_url"])
 
 
+def render_3d_iframe(src_url: str, height: int = 700) -> None:
+    """Render an interactive 3D WebGL iframe with full browser fullscreen permissions."""
+    html_code = f"""
+    <div style="width: 100%; height: {height}px; position: relative;">
+        <iframe 
+            src="{src_url}" 
+            style="width: 100%; height: 100%; border: none; border-radius: 8px;" 
+            allow="fullscreen; accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+            allowfullscreen="true"
+            webkitallowfullscreen="true"
+            mozallowfullscreen="true">
+        </iframe>
+    </div>
+    """
+    components.html(html_code, height=height + 5, scrolling=False)
+
+
 def render_solar_system_view() -> None:
     """Render 3D Interactive Solar System View."""
     render_section_heading("3D Solar System View")
     st.caption("Drag to orbit, scroll to zoom, and click any planet to inspect its real-time 3D trajectory and properties.")
+    st.link_button("⛶ Open 3D Canvas in Full Tab", "http://127.0.0.1:8000/static/solarsystem/")
 
-    # Render local self-hosted 3D solar system visualization from /static/solarsystem/
-    components.iframe("http://127.0.0.1:8000/static/solarsystem/", height=700, scrolling=True)
+    render_3d_iframe("http://127.0.0.1:8000/static/solarsystem/", height=700)
 
 
 def render_moon_simulator(client: ApiClient) -> None:
@@ -69,12 +86,12 @@ def render_moon_simulator(client: ApiClient) -> None:
     render_section_heading("3D Moon Phase Simulator")
     st.caption("Physically-driven 3D directional lighting Earth-Moon model paired with backend-calculated phase statistics.")
 
-    # Render 3D Moon Phase WebGL Viewer (Local / Hosted)
     from pathlib import Path
     moonphase_dir = Path(__file__).resolve().parent.parent.parent / "moonphase"
     moonphase_url = "http://127.0.0.1:8000/static/moonphase/" if (moonphase_dir.is_dir() and any(moonphase_dir.iterdir())) else "https://nimishpowar.github.io/MoonPhase/"
     
-    components.iframe(moonphase_url, height=550, scrolling=True)
+    st.link_button("⛶ Open 3D Canvas in Full Tab", moonphase_url)
+    render_3d_iframe(moonphase_url, height=600)
 
     st.divider()
     st.subheader("Calculated Lunar Phase Metrics")

@@ -29,7 +29,7 @@
       <span class="eyebrow">Orrery / Live Geometry</span>
       <h1>Sun · Earth · Moon</h1>
     </div>
-    <div class="phase-readout">
+    <div class="phase-readout" style="pointer-events: auto; display: flex; align-items: center; gap: 12px;">
       <div class="phase-dial" id="phase-dial" aria-hidden="true">
         <svg viewBox="0 0 100 100">
           <circle class="dial-ring" cx="50" cy="50" r="46"></circle>
@@ -48,6 +48,7 @@
           <span id="phase-day">day 0.0 / 29.53</span>
         </div>
       </div>
+      <button id="fullscreen-btn" class="now-btn" style="pointer-events: auto; margin-left: 8px; padding: 6px 12px; background: rgba(226, 172, 85, 0.25); border: 1px solid var(--brass); color: #ffffff; cursor: pointer;" title="Toggle Fullscreen Mode">⛶ Fullscreen</button>
     </div>
   </header>
 
@@ -67,6 +68,11 @@
         <button data-cam="god" class="active">God's Eye</button>
         <button data-cam="earth">Earth Observer</button>
       </div>
+    </div>
+
+    <div class="control-group">
+      <span class="group-label">View</span>
+      <button id="fullscreen-btn" class="now-btn" style="margin: 0; padding: 6px 12px;" title="Toggle Fullscreen Mode">⛶ Fullscreen</button>
     </div>
 
     <div class="control-group">
