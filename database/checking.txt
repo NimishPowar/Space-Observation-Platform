@@ -1,0 +1,110 @@
+Here are **3 easy ways** you can verify that your ETL pipeline is running and that daily APOD data is being saved into MySQL:
+
+---
+
+### 1️⃣ **Method 1: Query MySQL Directly (Quick Command)**
+
+Run this one-line command in your terminal inside the project folder:
+```powershell
+python -c "from database.session import DatabaseSessionManager; from database.models import NasaApod; session = DatabaseSessionManager().get_session(); print([(r.id, r.apod_date, r.title) for r in session.query(NasaApod).order_by(NasaApod.apod_date.desc()).all()])"
+```
+
+#### Or via MySQL Command Line / Workbench:
+```sql
+USE space_observation_platform;
+
+SELECT id, apod_date, title, media_type, created_at 
+FROM nasa_apod 
+ORDER BY apod_date DESC 
+LIMIT 10;
+```
+* **What to look for**: You will see rows ordered by `apod_date` with today's date (`2026-09-04`) and the exact timestamp (`created_at`) when the ETL pipeline inserted it into MySQL.
+
+---
+
+### 2️⃣ **Method 2: Run the ETL Pipeline Directly & Inspect the Log**
+
+You can test executing the ETL pipeline manually from your terminal at any time:
+```powershell
+python -c "from etl.pipelines.nasa_apod_pipeline import NasaApodPipeline; result = NasaApodPipeline().run_today(); print(result)"
+```
+
+#### Expected Output:
+```python
+PipelineResult(
+    pipeline_name='nasa_apod', 
+    status='success', 
+    records_extracted=1, 
+    records_transformed=1, 
+    records_loaded=1, 
+    errors=[]
+)
+```
+* **What to look for**: `status='success'` and `records_loaded=1` confirms data was fetched from NASA, transformed into an ORM model, and written to MySQL.
+
+---
+
+### 3️⃣ **Method 3: Check via Backend API Endpoint**
+
+Start your FastAPI server (`uvicorn backend.api.main:app --port 8000`) and open these URLs in your browser:
+
+* **Today's APOD**: [http://127.0.0.1:8000/api/apod/today](http://127.0.0.1:8000/api/apod/today)
+* **Recent APOD Archive**: [http://127.0.0.1:8000/api/apod/recent](http://127.0.0.1:8000/api/apod/recent)
+
+#### Sample JSON Response:
+```json
+{
+  "apod_date": "2026-09-04",
+  "title": "Nā ʻŪhāne Mōheʻe Huki Pō i ke Ola",
+  "explanation": "...",
+  "url": "https://apod.nasa.gov/apod/image/...",
+  "media_type": "image"
+}
+```
+
+Whenever the frontend or API is accessed on a new calendar day, the pipeline checks MySQL, detects the missing day, extracts it from NASA, and persists it to your local MySQL database automatically!
+Ran command: `python -c "from database.session import DatabaseSessionManager; from database.models import EducationalCategory, EducationalContent; session = DatabaseSessionManager().get_session(); cats = session.query(EducationalCategory).all(); print('Categories count:', len(cats)); print([(c.id, c.name, c.slug) for c in cats]); topics = session.query(EducationalContent).all(); print('\nTopics count:', len(topics)); print([(t.id, t.title, t.slug) for t in topics])"`
+Ran command: `python -c "from database.session import DatabaseSessionManager; from database.models import EducationalContent; session = DatabaseSessionManager().get_session(); print([(t.id, t.title, len(t.body or '')) for t in session.query(EducationalContent).all()])"`
+
+**Yes, absolutely!** All 12 mentioned topics across 6 categories are 100% seeded and stored directly in your local MySQL database in the `educational_categories` and `educational_content` tables.
+
+---
+
+### 📂 All Available Categories & Topics in MySQL
+
+Here is the exact list of **6 categories** and **12 full articles** currently stored in your database:
+
+#### 1️⃣ **Solar System (`solar-system`)**
+* 🪐 **The Solar System**: Overview of 8 planets, dwarf planets, Kuiper belt, and Oort cloud.
+* ☄️ **Comets: Icy Cosmic Snowballs**: Composition, coma tails, and orbital paths.
+* 🪨 **Asteroids: Rocky Remnants**: Planet formation history and Asteroid Belt dynamics.
+
+#### 2️⃣ **Planetary Science (`planetary-science`)**
+* 🔴 **Mars: The Red Planet Overview**: Surface geology, atmosphere, and rover exploration.
+* ⚡ **Jupiter: King of the Planets**: Great Red Spot, atmospheric bands, and Galilean moons.
+
+#### 3️⃣ **Lunar Phenomena (`lunar-phenomena`)**
+* 🌔 **Understanding Moon Phases**: Phase angles, synodic cycles, and tidal interaction.
+
+#### 4️⃣ **Eclipses & Alignments (`eclipses`)**
+* 🌒 **Solar & Lunar Eclipses Explained**: Total, annular, penumbral eclipses, and syzygy alignment.
+
+#### 5️⃣ **Stars & Constellations (`stellar-astronomy`)**
+* ⭐ **Stars and Stellar Evolution**: Lifecycle from protostars to supernovae and white dwarfs.
+
+#### 6️⃣ **Deep Space & Cosmology (`deep-space`)**
+* 🌌 **Galaxies: Cosmic Cities of Stars**: Spiral, elliptical, and irregular galaxies.
+* 🌀 **Nebulae: Stellar Nurseries & Remnants**: Emission, reflection, and planetary nebulae.
+* 🕳️ **Black Holes: Gravity's Ultimate Triumph**: Event horizons, singularity, and hawking radiation.
+* 🪐 **Exoplanets: Worlds Beyond Our Solar System**: Transit photometry and radial velocity detection methods.
+
+---
+
+### 🔍 Verification in MySQL
+
+You can query your MySQL database at any time using Python:
+```powershell
+python -c "from database.session import DatabaseSessionManager; from database.models import EducationalContent; session = DatabaseSessionManager().get_session(); print([(t.id, t.title) for t in session.query(EducationalContent).all()])"
+```
+
+Every single article includes a formatted Markdown body, summary excerpt, category slug, and external NASA reference link!

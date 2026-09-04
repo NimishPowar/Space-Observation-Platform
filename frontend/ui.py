@@ -10,8 +10,8 @@ import plotly.graph_objects as go
 import streamlit as st
 
 
-def inject_astronomy_styles() -> None:
-    """Inject custom CSS for futuristic deep space glassmorphic aesthetics and top navigation bar."""
+def inject_astronomy_styles(is_landing: bool = False) -> None:
+    """Inject custom CSS for futuristic deep space glassmorphic aesthetics, navbar, and procedural starfield."""
     css = """
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
@@ -201,6 +201,40 @@ def inject_astronomy_styles() -> None:
     """
     st.markdown(css, unsafe_allow_html=True)
 
+    if not is_landing:
+        starfield_html = """
+        <canvas id="procedural-starfield-canvas" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; pointer-events: none;"></canvas>
+        <script>
+        (function() {
+            var canvas = document.getElementById('procedural-starfield-canvas');
+            if (!canvas) return;
+            var ctx = canvas.getContext('2d');
+            function resize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                draw();
+            }
+            function draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                var starCount = 130;
+                for (var i = 0; i < starCount; i++) {
+                    var x = Math.random() * canvas.width;
+                    var y = Math.random() * canvas.height;
+                    var r = 0.5 + Math.random() * 1.0;
+                    var alpha = 0.15 + Math.random() * 0.35;
+                    ctx.beginPath();
+                    ctx.arc(x, y, r, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(255, 255, 255, ' + alpha + ')';
+                    ctx.fill();
+                }
+            }
+            window.addEventListener('resize', resize);
+            resize();
+        })();
+        </script>
+        """
+        st.markdown(starfield_html, unsafe_allow_html=True)
+
 
 def render_section_heading(title: str, caption: Optional[str] = None) -> None:
     """Render a styled heading for a page section with optional caption."""
@@ -256,10 +290,10 @@ def render_location_selector() -> tuple[float, float, str]:
     """Render a location selector widget and persist coordinates in session state."""
     from frontend.client import ApiClient, FrontendApiError
 
-    city_query = st.session_state.get("location_query", "Mumbai")
-    location_label = st.session_state.get("location_label", "Mumbai")
-    latitude = float(st.session_state.get("location_latitude", 19.0760))
-    longitude = float(st.session_state.get("location_longitude", 72.8777))
+    city_query = st.session_state.get("location_query", "Pune")
+    location_label = st.session_state.get("location_label", "Pune")
+    latitude = float(st.session_state.get("location_latitude", 18.5204))
+    longitude = float(st.session_state.get("location_longitude", 73.8567))
 
     col1, col2 = st.columns([3, 1])
     with col1:
@@ -288,23 +322,28 @@ def render_location_selector() -> tuple[float, float, str]:
 
 def render_time_selector() -> str | None:
     """Render a friendly time selection widget and return an ISO 8601 string."""
-    when_mode = st.radio("⏰ Observation Timestamp", ["Right Now", "Tonight", "Pick Date & Time"], horizontal=True)
+    when_mode = st.radio("⏰ Observation Timestamp", ["Right Now", "Tonight (8:30 PM)", "Pick Date & Time"], horizontal=True)
+
+    now_utc = datetime.now(timezone.utc)
 
     if when_mode == "Right Now":
-        return datetime.now(timezone.utc).isoformat()
+        selected_dt = now_utc
+    elif when_mode == "Tonight (8:30 PM)":
+        # 8:30 PM (20:30) IST is 15:00 UTC
+        tonight_utc = now_utc.replace(hour=15, minute=0, second=0, microsecond=0)
+        if now_utc > tonight_utc + timedelta(hours=4):
+            # If current UTC time is past 19:00 UTC (after midnight IST), set tomorrow's 8:30 PM
+            tonight_utc += timedelta(days=1)
+        selected_dt = tonight_utc
+    else:
+        col1, col2 = st.columns(2)
+        with col1:
+            selected_date = st.date_input("Date", value=date.today())
+        with col2:
+            selected_time = st.time_input("Time", value=time(20, 30))
+        selected_dt = datetime.combine(selected_date, selected_time, tzinfo=timezone.utc)
 
-    if when_mode == "Tonight":
-        tonight = datetime.now(timezone.utc).replace(hour=20, minute=30, second=0, microsecond=0)
-        if tonight < datetime.now(timezone.utc):
-            tonight += timedelta(days=1)
-        return tonight.isoformat()
-
-    col1, col2 = st.columns(2)
-    with col1:
-        selected_date = st.date_input("Date", value=date.today())
-    with col2:
-        selected_time = st.time_input("Time", value=time(20, 30))
-    selected_dt = datetime.combine(selected_date, selected_time, tzinfo=timezone.utc)
+    st.caption(f"🕒 **Simulated Ephemeris Time**: `{selected_dt.strftime('%Y-%m-%d %H:%M:%S UTC')}`")
     return selected_dt.isoformat()
 
 

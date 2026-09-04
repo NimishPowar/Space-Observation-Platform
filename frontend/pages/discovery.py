@@ -11,42 +11,33 @@ from frontend.ui import inject_astronomy_styles, render_error, render_section_he
 
 
 def render_astronomy_basics(client: ApiClient) -> None:
-    """Render Module 1: Astronomy Basics."""
+    """Render Module 1: Astronomy Basics with one single clean topic selector."""
     try:
-        categories = client.get_discovery_categories()
-    except FrontendApiError:
-        categories = []
-
-    cat_options = ["All Categories"] + [c["name"] for c in categories]
-    cat_slug_map = {c["name"]: c["slug"] for c in categories}
-
-    col1, col2 = st.columns([2, 1])
-    with col1:
-        search_query = st.text_input("🔍 Search Astronomy Topics", placeholder="e.g. Black Holes, Comets, Nebulae...")
-    with col2:
-        selected_cat_name = st.selectbox("Filter Category", cat_options)
-
-    selected_cat_slug = cat_slug_map.get(selected_cat_name) if selected_cat_name != "All Categories" else None
-
-    try:
-        topics = client.get_discovery_topics(query=search_query if search_query else None, category=selected_cat_slug)
+        topics = client.get_discovery_topics()
     except FrontendApiError as exc:
         render_error(str(exc))
         topics = []
 
     if not topics:
-        st.warning("No matching astronomy topics found. Try adjusting your search query.")
+        st.info("No astronomy topics available in the database.")
         return
 
-    topic_titles = [t["title"] for t in topics]
-    selected_title = st.selectbox("Select Topic to Read", topic_titles)
-    selected_topic = next((t for t in topics if t["title"] == selected_title), topics[0])
+    # Single dropdown containing all available astronomy topics formatted with category prefix
+    topic_options = {f"[{t.get('category_name', 'General')}]  {t['title']}": t for t in topics}
+    selected_label = st.selectbox(
+        "📚 Choose Astronomy Topic",
+        options=list(topic_options.keys()),
+        index=0,
+    )
 
+    selected_topic = topic_options[selected_label]
+
+    st.markdown("<hr style='margin: 18px 0; opacity: 0.15;'>", unsafe_allow_html=True)
     render_section_heading(selected_topic["title"])
-    st.markdown(f"**Category:** `{selected_topic.get('category_name', 'General')}` | **Slug:** `{selected_topic.get('slug', 'N/A')}`")
+    st.caption(f"Category: **{selected_topic.get('category_name', 'General')}**")
 
     if selected_topic.get("excerpt"):
-        st.info(selected_topic["excerpt"])
+        st.info(f"**Overview:** {selected_topic['excerpt']}")
 
     if selected_topic.get("body"):
         st.markdown(selected_topic["body"])

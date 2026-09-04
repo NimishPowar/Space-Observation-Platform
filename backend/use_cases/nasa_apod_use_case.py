@@ -74,15 +74,19 @@ class NasaApodUseCase:
         return self._to_entry(record)
 
     def get_recent(self, limit: int = 10) -> List[ApodEntry]:
-        """Return the most recent APOD entries."""
+        """Return the most recent APOD entries. Auto-runs ETL pipeline if today's entry or DB is behind."""
+        today_str = date.today().isoformat()
         records = self._repo.get_latest(limit=limit)
-        if not records:
+
+        is_missing_today = not records or records[0].apod_date != today_str
+        if is_missing_today:
             try:
                 from etl.pipelines.nasa_apod_pipeline import NasaApodPipeline
                 NasaApodPipeline().run_last_n_days(limit)
                 records = self._repo.get_latest(limit=limit)
             except Exception:
                 pass
+
         return [self._to_entry(r) for r in records]
 
     @staticmethod

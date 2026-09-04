@@ -16,10 +16,14 @@ from frontend.ui import inject_astronomy_styles
 from frontend.pages.discovery import render as render_discovery
 from frontend.pages.explore import render as render_explore
 from frontend.pages.planner import render as render_planner
+from frontend.pages.landing import render_landing
 
 
-def render_top_navbar(pages: dict) -> str:
+def render_top_navbar(pages: dict, current_selection: str) -> str:
     """Render a modern top navigation bar with brand logo and horizontal nav pills."""
+    page_keys = list(pages.keys())
+    default_index = page_keys.index(current_selection) if current_selection in page_keys else 0
+
     col1, col2 = st.columns([2, 3])
     with col1:
         st.markdown(
@@ -42,7 +46,8 @@ def render_top_navbar(pages: dict) -> str:
     with col2:
         selected_page = st.radio(
             "Navigation",
-            list(pages.keys()),
+            page_keys,
+            index=default_index,
             horizontal=True,
             label_visibility="collapsed",
             key="top_nav_selection",
@@ -53,14 +58,22 @@ def render_top_navbar(pages: dict) -> str:
 
 
 def run() -> None:
-    """Run the Streamlit UI with a top navbar navigation flow."""
+    """Run the Streamlit UI with a splash landing page gating flow."""
     st.set_page_config(
         page_title="Space Observation Intelligence Platform",
         page_icon="🌌",
         layout="wide",
         initial_sidebar_state="collapsed",
     )
-    inject_astronomy_styles()
+
+    if "selected_page" not in st.session_state:
+        st.session_state["selected_page"] = None
+
+    if st.session_state["selected_page"] is None:
+        render_landing()
+        return
+
+    inject_astronomy_styles(is_landing=False)
 
     pages = {
         "🌟 Explore": render_explore,
@@ -68,7 +81,12 @@ def run() -> None:
         "💡 Discovery": render_discovery,
     }
 
-    selected_page_name = render_top_navbar(pages)
+    current = st.session_state.get("selected_page", "🌟 Explore")
+    if current not in pages:
+        current = "🌟 Explore"
+
+    selected_page_name = render_top_navbar(pages, current_selection=current)
+    st.session_state["selected_page"] = selected_page_name
     pages[selected_page_name]()
 
 

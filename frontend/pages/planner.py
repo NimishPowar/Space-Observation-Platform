@@ -6,7 +6,7 @@ and exploring NASA Astronomy Picture of the Day (APOD).
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 import streamlit as st
 
 from frontend.client import ApiClient, FrontendApiError
@@ -122,14 +122,22 @@ def render() -> None:
         st.markdown("### 📷 NASA Astronomy Picture of the Day")
         st.caption("Sourced directly via the platform's backend NASA adapter and ETL storage pipeline.")
 
-        try:
-            recent_apods = client.get_apod_recent(limit=5)
-            if recent_apods:
-                latest = recent_apods[0]
-                st.subheader(latest.get("title", "NASA Astronomy Picture"))
-                st.caption(f"Date: {latest.get('apod_date', 'N/A')} | Source: NASA APOD")
+        col_apod_hdr, col_apod_date = st.columns([2, 1])
+        with col_apod_date:
+            selected_apod_date = st.date_input("Browse APOD Date", value=date.today(), key="apod_date_picker")
 
-                img_url = latest.get("url")
+        try:
+            target_date_str = selected_apod_date.isoformat()
+            latest = client.get_apod_by_date(target_date_str) if selected_apod_date != date.today() else client.get_apod_today()
+            if not latest:
+                recent_apods = client.get_apod_recent(limit=5)
+                latest = recent_apods[0] if recent_apods else None
+
+            if latest:
+                st.subheader(latest.get("title", "NASA Astronomy Picture"))
+                st.caption(f"Date: `{latest.get('apod_date', 'N/A')}` | Source: NASA Astronomy Picture of the Day")
+
+                img_url = latest.get("hdurl") or latest.get("url")
                 if img_url and latest.get("media_type") == "image":
                     st.image(img_url, use_container_width=True, caption=latest.get("title"))
                 elif img_url:
@@ -142,14 +150,16 @@ def render() -> None:
                 if latest.get("copyright_text"):
                     st.caption(f"© Copyright: {latest.get('copyright_text')}")
 
+                recent_apods = client.get_apod_recent(limit=5)
                 if len(recent_apods) > 1:
                     render_section_heading("Recent APOD Archive")
-                    cols = st.columns(min(3, len(recent_apods) - 1))
-                    for idx, apod in enumerate(recent_apods[1:4]):
+                    cols = st.columns(min(4, len(recent_apods) - 1))
+                    for idx, apod in enumerate(recent_apods[1:5]):
                         with cols[idx % len(cols)]:
                             if apod.get("url") and apod.get("media_type") == "image":
-                                st.image(apod.get("url"), caption=apod.get("title"), use_container_width=True)
-                            st.caption(f"📅 {apod.get('apod_date')}")
+                                st.image(apod.get("url"), caption=f"{apod.get('apod_date')}: {apod.get('title')}", use_container_width=True)
+                            else:
+                                st.write(f"📅 **{apod.get('apod_date')}**: {apod.get('title')}")
             else:
                 st.info("NASA APOD entries will appear here once populated by the ETL pipeline.")
         except FrontendApiError:

@@ -29,6 +29,14 @@ def create_app() -> FastAPI:
     if moonphase_dir.is_dir() and any(moonphase_dir.iterdir()):
         app.mount("/static/moonphase", StaticFiles(directory=str(moonphase_dir), html=True), name="moonphase")
 
+    images_dir = root_dir / "frontend" / "images"
+    if images_dir.is_dir():
+        app.mount("/static/images", StaticFiles(directory=str(images_dir)), name="images")
+
+    assets_dir = root_dir / "frontend" / "assets"
+    if assets_dir.is_dir():
+        app.mount("/static/assets", StaticFiles(directory=str(assets_dir)), name="assets")
+
     return app
 
 
