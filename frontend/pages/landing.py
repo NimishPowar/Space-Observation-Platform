@@ -12,9 +12,6 @@ from frontend.ui import inject_astronomy_styles
 def _get_landing_bg_url() -> str:
     """Return base64 data URL or HTTP URL for the landing page background image."""
     img_path = Path(__file__).resolve().parent.parent / "images" / "landing_page.jpg"
-    if not img_path.is_file():
-        img_path = Path(__file__).resolve().parent.parent / "assets" / "landing_bg.jpg"
-
     if img_path.is_file():
         try:
             encoded = base64.b64encode(img_path.read_bytes()).decode("utf-8")
