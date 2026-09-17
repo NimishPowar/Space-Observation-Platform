@@ -16,7 +16,6 @@ from frontend.ui import inject_astronomy_styles
 from frontend.pages.discovery import render as render_discovery
 from frontend.pages.explore import render as render_explore
 from frontend.pages.planner import render as render_planner
-from frontend.pages.landing import render_landing
 
 
 def render_top_navbar(pages: dict, current_selection: str) -> str:
@@ -58,20 +57,13 @@ def render_top_navbar(pages: dict, current_selection: str) -> str:
 
 
 def run() -> None:
-    """Run the Streamlit UI with a splash landing page gating flow."""
+    """Run the Streamlit UI with direct top navbar navigation."""
     st.set_page_config(
         page_title="Space Observation Intelligence Platform",
         page_icon="🌌",
         layout="wide",
         initial_sidebar_state="collapsed",
     )
-
-    if "selected_page" not in st.session_state:
-        st.session_state["selected_page"] = None
-
-    if st.session_state["selected_page"] is None:
-        render_landing()
-        return
 
     inject_astronomy_styles(is_landing=False)
 
@@ -81,7 +73,7 @@ def run() -> None:
         "💡 Discovery": render_discovery,
     }
 
-    current = st.session_state.get("selected_page", "🌟 Explore")
+    current = st.session_state.get("selected_page")
     if current not in pages:
         current = "🌟 Explore"
 

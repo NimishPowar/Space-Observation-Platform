@@ -222,6 +222,9 @@ class ApiClient:
     def get_apod_today(self) -> dict:
         return self.get_json("/apod/today")
 
+    def get_apod_by_date(self, target_date: str) -> dict:
+        return self.get_json(f"/apod/{target_date}")
+
     def get_apod_recent(self, limit: int = 10) -> list:
         return self.get_json(
             "/apod/recent",

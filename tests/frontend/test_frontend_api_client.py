@@ -65,3 +65,20 @@ def test_api_client_raises_frontend_api_error_on_request_failure(monkeypatch: py
 
     with pytest.raises(FrontendApiError):
         client.get_moon(latitude=12.5, longitude=77.5)
+
+
+def test_api_client_get_apod_by_date(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verify get_apod_by_date sends proper endpoint request."""
+
+    def fake_get(url: str, params: dict | None = None, timeout: int = 0) -> _FakeResponse:
+        assert url.endswith("/apod/2026-09-15")
+        return _FakeResponse(payload={"apod_date": "2026-09-15", "title": "Test APOD"})
+
+    monkeypatch.setattr("frontend.client.requests.get", fake_get)
+
+    client = ApiClient(config=ApiClientConfig(base_url="http://localhost:8000/api"))
+    payload = client.get_apod_by_date("2026-09-15")
+
+    assert payload["apod_date"] == "2026-09-15"
+    assert payload["title"] == "Test APOD"
+
