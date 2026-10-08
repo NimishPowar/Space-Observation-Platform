@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from functools import lru_cache
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -40,11 +41,13 @@ def _get_loader() -> Loader:
     return Loader(str(data_dir))
 
 
+@lru_cache(maxsize=1)
 def load_ephemeris() -> object:
     loader = _get_loader()
     return loader("de421.bsp")
 
 
+@lru_cache(maxsize=1)
 def load_timescale() -> object:
     return load.timescale()
 

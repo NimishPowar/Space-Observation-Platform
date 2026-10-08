@@ -1,7 +1,11 @@
 import os
+import time
 import requests
 
 from dataclasses import dataclass, field
+
+_RESPONSE_CACHE: dict[tuple[str, tuple | None], tuple[float, dict | list]] = {}
+_CACHE_TTL_SECONDS = 60.0
 
 
 @dataclass(frozen=True)
@@ -17,25 +21,41 @@ class FrontendApiError(RuntimeError):
 
 
 class ApiClient:
-    """Small reusable client for the backend astronomy endpoints."""
+    """Small reusable client for the backend astronomy endpoints with response caching."""
 
-    def __init__(self, config: ApiClientConfig | None = None) -> None:
+    def __init__(self, config: ApiClientConfig | None = None, use_cache: bool = True) -> None:
         self._config = config or ApiClientConfig()
+        self._use_cache = use_cache
+
+    @staticmethod
+    def clear_cache() -> None:
+        """Clear all in-memory response cache entries."""
+        _RESPONSE_CACHE.clear()
 
     def get_json(self, path: str, params: dict | None = None) -> dict | list:
-        """Return JSON from a backend endpoint or raise a user-friendly error."""
+        """Return JSON from a backend endpoint (using 60s TTL cache) or raise a user-friendly error."""
+        url = f"{self._config.base_url}{path}"
+        params_tuple = tuple(sorted(params.items())) if params else None
+        cache_key = (url, params_tuple)
+        now = time.time()
+
+        if self._use_cache and cache_key in _RESPONSE_CACHE:
+            ts, cached_data = _RESPONSE_CACHE[cache_key]
+            if now - ts < _CACHE_TTL_SECONDS:
+                return cached_data
+
         try:
             response = requests.get(
-                f"{self._config.base_url}{path}",
+                url,
                 params=params,
                 timeout=self._config.timeout_seconds,
             )
             response.raise_for_status()
+            data = response.json()
+            _RESPONSE_CACHE[cache_key] = (now, data)
+            return data
         except requests.RequestException as exc:
             raise FrontendApiError(f"Unable to reach the backend API: {exc}") from exc
-
-        try:
-            return response.json()
         except ValueError as exc:
             raise FrontendApiError("The backend returned an invalid JSON response.") from exc
 

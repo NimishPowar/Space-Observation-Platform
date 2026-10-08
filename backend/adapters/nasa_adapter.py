@@ -23,7 +23,7 @@ class NasaApiConfig:
 
     api_key: str = field(default_factory=lambda: os.getenv("NASA_API_KEY", "DEMO_KEY"))
     base_url: str = "https://api.nasa.gov"
-    timeout_seconds: int = 15
+    timeout_seconds: int = 4
 
 
 @dataclass(frozen=True)

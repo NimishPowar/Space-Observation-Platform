@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from sqlalchemy.orm import Session
 
-from database.models import CelestialEvent, EducationalCategory, EducationalContent, Planet
+from database.models import CelestialEvent, EducationalCategory, EducationalContent, NasaApod, Planet
 
 
 def seed_planets(session: Session) -> None:
@@ -403,6 +403,7 @@ def seed_celestial_events(session: Session) -> None:
             "description": "One of the brightest meteor showers of the year, producing up to 100 meteors per hour at peak under dark skies.",
             "starts_at": now + timedelta(days=2),
             "ends_at": now + timedelta(days=3),
+            "visible_from": "Northern Hemisphere & Mid-Latitudes",
             "is_recurring": True,
             "source_url": "https://science.nasa.gov/solar-system/meteors-meteorites/perseids/",
         },
@@ -412,6 +413,7 @@ def seed_celestial_events(session: Session) -> None:
             "description": "The crescent Moon and bright gas giant Jupiter pass within 3 degrees of each other in the early evening sky.",
             "starts_at": now + timedelta(days=5),
             "ends_at": now + timedelta(days=6),
+            "visible_from": "Global (Western Evening Sky)",
             "planet_id": planet_map.get("jupiter"),
             "is_recurring": False,
             "source_url": "https://science.nasa.gov/skywatching/",
@@ -422,6 +424,7 @@ def seed_celestial_events(session: Session) -> None:
             "description": "Saturn reaches its closest approach to Earth, shining at its brightest with its ring system fully illuminated.",
             "starts_at": now + timedelta(days=12),
             "ends_at": now + timedelta(days=13),
+            "visible_from": "Global (All Night Sky)",
             "planet_id": planet_map.get("saturn"),
             "is_recurring": True,
             "source_url": "https://science.nasa.gov/saturn/",
@@ -432,6 +435,7 @@ def seed_celestial_events(session: Session) -> None:
             "description": "Fast meteors produced by debris left behind by Halley's Comet, known for bright fireballs.",
             "starts_at": now + timedelta(days=25),
             "ends_at": now + timedelta(days=26),
+            "visible_from": "Global (Both Hemispheres)",
             "is_recurring": True,
             "source_url": "https://science.nasa.gov/solar-system/meteors-meteorites/orionids/",
         },
@@ -441,6 +445,7 @@ def seed_celestial_events(session: Session) -> None:
             "description": "Terrestrial neighbors Venus and Mars appear side-by-side in the western twilight sky.",
             "starts_at": now + timedelta(days=35),
             "ends_at": now + timedelta(days=36),
+            "visible_from": "Global (Western Horizon at Dusk)",
             "planet_id": planet_map.get("venus"),
             "is_recurring": False,
             "source_url": "https://science.nasa.gov/skywatching/",
@@ -451,6 +456,7 @@ def seed_celestial_events(session: Session) -> None:
             "description": "The king of meteor showers, producing up to 120 multi-colored meteors per hour from asteroid 3200 Phaethon.",
             "starts_at": now + timedelta(days=55),
             "ends_at": now + timedelta(days=56),
+            "visible_from": "Global (Best in Northern Hemisphere)",
             "is_recurring": True,
             "source_url": "https://science.nasa.gov/solar-system/meteors-meteorites/geminids/",
         },
@@ -463,6 +469,62 @@ def seed_celestial_events(session: Session) -> None:
         else:
             existing.starts_at = payload["starts_at"]
             existing.ends_at = payload["ends_at"]
+            existing.visible_from = payload["visible_from"]
+
+
+def seed_nasa_apod(session: Session) -> None:
+    """Seed 30 consecutive days of historical NASA APOD reference entries with unique titles and working imagery."""
+    from datetime import date, timedelta
+    today = date.today()
+
+    sample_images = [
+        ("A Zodiacal Night over Hanle Dark Sky Reserve", "A luminous band of zodiacal light captured during September's star party at the remote Hanle Dark Sky Reserve, Ladakh, India. Bright planet Jupiter appears immersed in the faint zodiacal glow near the eastern horizon.", "https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?q=80&w=1200&auto=format&fit=crop", "Neelam and Ajay Talwar"),
+        ("Messier 33: The Triangulum Galaxy", "The small northern constellation Triangulum harbors this magnificent face-on spiral galaxy Messier 33, located 3 million light-years away.", "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=1200&auto=format&fit=crop", "NASA / ESA / Hubble"),
+        ("A Treasure Chest in the Carina Nebula", "Jewel-like stars shine brightly against clouds of dust and glowing gas in NGC 3603, a star-forming region in the Carina spiral arm.", "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1200&auto=format&fit=crop", "NASA / STScI"),
+        ("Webb's Infrared View of M64", "The Sleeping Beauty Galaxy Messier 64 reveals detailed dust lanes and glowing newborn stellar clusters in infrared light.", "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?q=80&w=1200&auto=format&fit=crop", "NASA / JWST"),
+        ("A Daytime Eclipse: Moon Occults Venus", "The thin crescent Moon passed directly in front of brilliant planet Venus in this daylight telescopic spectacle.", "https://images.unsplash.com/photo-1532693322450-2cb5c511067d?q=80&w=1200&auto=format&fit=crop", "ESO / P. Horálek"),
+        ("Pillars of Creation in the Eagle Nebula", "Majestic columns of interstellar gas and dust in the Eagle Nebula, Messier 16, located 6,500 light-years from Earth.", "https://images.unsplash.com/photo-1502134249126-9f3755a50d78?q=80&w=1200&auto=format&fit=crop", "NASA / ESA / CSA / STScI"),
+        ("Milky Way Arch over Dark Sky Reserve", "Spectacular arch of our home galaxy glowing across the night sky, revealing dark dust rifts and cosmic star fields.", "https://images.unsplash.com/photo-1516339901601-2e1b62dc0c45?q=80&w=1200&auto=format&fit=crop", "Astrophotography Credit"),
+        ("The Orion Nebula Messier 42", "The closest massive star-forming region to Earth, glowing with ionized hydrogen and newborn hot blue stars.", "https://images.unsplash.com/photo-1504333638930-c8787321eee0?q=80&w=1200&auto=format&fit=crop", "NASA / STScI"),
+        ("Andromeda Galaxy M31 Core", "Detailed portrait of Andromeda's central bulge, housing hundreds of billions of ancient stars.", "https://images.unsplash.com/photo-1543722530-d2c3201371e7?q=80&w=1200&auto=format&fit=crop", "Subaru Telescope / NAOJ"),
+        ("Lagoon Nebula M8 in Sagittarius", "A vast interstellar cloud in Sagittarius featuring glowing emission filaments and dark dust globules.", "https://images.unsplash.com/photo-1447433589675-4aaa569f3e05?q=80&w=1200&auto=format&fit=crop", "ESO / VPHAS+ Team"),
+        ("Veil Nebula Supernova Remnant", "Faint expanding blast wave of a star that exploded over 10,000 years ago in Cygnus.", "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop", "NASA / ESA / Hubble Heritage"),
+        ("Horsehead and Flame Nebulae", "The iconic silhouetted Horsehead Nebula Barnard 33 standing out against bright glowing hydrogen gas in Orion.", "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?q=80&w=1200&auto=format&fit=crop", "ESO / B. Tafreshi"),
+        ("Saturn's Rings & Moons System", "Cassini spacecraft snapshot of Saturn's ring system and Titan's atmosphere in true color.", "https://images.unsplash.com/photo-1614728894747-a83421e2b9c9?q=80&w=1200&auto=format&fit=crop", "NASA / JPL-Caltech"),
+        ("Jupiter's Great Red Spot", "Juno spacecraft high-altitude view of the Great Red Spot and turbulent storm bands in Jupiter's southern hemisphere.", "https://images.unsplash.com/photo-1614732414444-096e5f1122d5?q=80&w=1200&auto=format&fit=crop", "NASA / JPL / SwRI"),
+        ("Perseid Fireball over Mauna Kea", "A brilliant green fireball meteor streaks through the night sky above the telescopes at Mauna Kea Observatory.", "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=1200&auto=format&fit=crop", "Gemini Observatory / NOIRLab"),
+        ("Whirlpool Galaxy M51", "Classic grand-design spiral galaxy interacting with its companion galaxy NGC 5195 in Canes Venatici.", "https://images.unsplash.com/photo-1454789548928-9efd52dc4031?q=80&w=1200&auto=format&fit=crop", "NASA / ESA / S. Beckwith"),
+        ("Ring Nebula M57 Shell", "Expanding planetary nebula shell thrown off by a dying sun-like star in the constellation Lyra.", "https://images.unsplash.com/photo-1464802686167-b939a6910659?q=80&w=1200&auto=format&fit=crop", "NASA / ESA / C. Robert"),
+        ("Rosette Nebula Star Nursery", "Cosmic rose of gas and dust in Monoceros surrounding the young open cluster NGC 2244.", "https://images.unsplash.com/photo-1465101162946-4377e57745c3?q=80&w=1200&auto=format&fit=crop", "KPNO / NOIRLab / NSF"),
+        ("Pleiades Seven Sisters Cluster", "Reflection nebula surrounding the bright blue hot stars of the Pleiades cluster M45.", "https://images.unsplash.com/photo-1538370965046-79c0d6907d47?q=80&w=1200&auto=format&fit=crop", "NASA / STScI"),
+        ("Crab Nebula M1 Pulsar Remnant", "Filamentary expansion of the historical AD 1054 supernova explosion centered around a rapidly spinning neutron star.", "https://images.unsplash.com/photo-1502134249126-9f3755a50d78?q=80&w=1200&auto=format&fit=crop", "NASA / ESA / J. Hester"),
+    ]
+
+    for days_back in range(30):
+        entry_date = (today - timedelta(days=days_back)).isoformat()
+        img_title, img_exp, img_url, img_copy = sample_images[days_back % len(sample_images)]
+        if days_back >= len(sample_images):
+            img_title = f"{img_title} (Day -{days_back})"
+
+        payload = {
+            "apod_date": entry_date,
+            "title": img_title,
+            "explanation": img_exp,
+            "url": img_url,
+            "hdurl": img_url,
+            "media_type": "image",
+            "copyright_text": img_copy,
+            "source_api": "nasa_apod",
+        }
+
+        existing = session.query(NasaApod).filter_by(apod_date=entry_date).first()
+        if existing is None:
+            session.add(NasaApod(**payload))
+        else:
+            existing.title = payload["title"]
+            existing.url = payload["url"]
+            existing.hdurl = payload["hdurl"]
+            existing.explanation = payload["explanation"]
 
 
 def seed_reference_data(session: Session) -> None:
@@ -472,4 +534,5 @@ def seed_reference_data(session: Session) -> None:
     session.flush()
     seed_educational_content(session)
     seed_celestial_events(session)
+    seed_nasa_apod(session)
     session.commit()

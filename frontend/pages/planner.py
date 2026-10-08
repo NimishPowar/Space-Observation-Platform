@@ -129,15 +129,18 @@ def render() -> None:
         try:
             target_date_str = selected_apod_date.isoformat()
             latest = client.get_apod_by_date(target_date_str) if selected_apod_date != date.today() else client.get_apod_today()
-            if not latest:
-                recent_apods = client.get_apod_recent(limit=5)
-                latest = recent_apods[0] if recent_apods else None
+            recent_apods = client.get_apod_recent(limit=5)
+            if not latest and recent_apods:
+                latest = recent_apods[0]
 
             if latest:
+                actual_date = latest.get("apod_date", target_date_str)
                 st.subheader(latest.get("title", "NASA Astronomy Picture"))
-                st.caption(f"Date: `{latest.get('apod_date', 'N/A')}` | Source: NASA Astronomy Picture of the Day")
+                if actual_date != target_date_str:
+                    st.info(f"ℹ️ Showing closest available APOD record for **{actual_date}** (No APOD entry found for {target_date_str}).")
+                st.caption(f"Date: `{actual_date}` | Source: NASA Astronomy Picture of the Day")
 
-                img_url = latest.get("hdurl") or latest.get("url")
+                img_url = latest.get("url") or latest.get("hdurl")
                 if img_url and latest.get("media_type") == "image":
                     st.image(img_url, use_container_width=True, caption=latest.get("title"))
                 elif img_url:
@@ -150,14 +153,14 @@ def render() -> None:
                 if latest.get("copyright_text"):
                     st.caption(f"© Copyright: {latest.get('copyright_text')}")
 
-                recent_apods = client.get_apod_recent(limit=5)
-                if len(recent_apods) > 1:
+                if recent_apods and len(recent_apods) > 1:
                     render_section_heading("Recent APOD Archive")
                     cols = st.columns(min(4, len(recent_apods) - 1))
                     for idx, apod in enumerate(recent_apods[1:5]):
                         with cols[idx % len(cols)]:
-                            if apod.get("url") and apod.get("media_type") == "image":
-                                st.image(apod.get("url"), caption=f"{apod.get('apod_date')}: {apod.get('title')}", use_container_width=True)
+                            apod_img = apod.get("url") or apod.get("hdurl")
+                            if apod_img and apod.get("media_type") == "image":
+                                st.image(apod_img, caption=f"{apod.get('apod_date')}: {apod.get('title')}", use_container_width=True)
                             else:
                                 st.write(f"📅 **{apod.get('apod_date')}**: {apod.get('title')}")
             else:
@@ -176,9 +179,11 @@ def render() -> None:
                 for event in events:
                     with st.container():
                         st.markdown(f"#### 🌠 {event.get('name', 'N/A')}")
+                        visible_loc = event.get("visible_from") or "Global"
                         st.caption(
                             f"Category: **{_format_event_category(event.get('category') or event.get('event_type', ''))}** | "
-                            f"Starts: **{_format_iso_date(event.get('start_time'))}**"
+                            f"Starts: **{_format_iso_date(event.get('start_time'))}** | "
+                            f"Visible From: 🌍 **{visible_loc}**"
                         )
                         if event.get("description"):
                             st.write(event.get("description"))

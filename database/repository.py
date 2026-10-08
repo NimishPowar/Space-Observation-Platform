@@ -267,6 +267,22 @@ class NasaApodRepository(SQLAlchemyRepository[NasaApod]):
         statement = select(NasaApod).where(NasaApod.apod_date == apod_date)
         return self._session.scalar(statement)
 
+    def get_closest(self, target_date: str) -> NasaApod | None:
+        """Get the APOD entry whose date is closest to target_date."""
+        statement = select(NasaApod)
+        all_records = list(self._session.scalars(statement).all())
+        if not all_records:
+            return None
+        from datetime import datetime as dt
+        try:
+            target_dt = dt.strptime(target_date, "%Y-%m-%d").date()
+            return min(
+                all_records,
+                key=lambda r: abs((dt.strptime(r.apod_date, "%Y-%m-%d").date() - target_dt).days),
+            )
+        except Exception:
+            return all_records[0]
+
     def get_latest(self, limit: int = 10) -> list[NasaApod]:
         """Get the most recent APOD entries."""
         statement = (

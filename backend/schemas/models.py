@@ -81,6 +81,7 @@ class CelestialEventResponse(BaseModel):
     visible_objects: Optional[List[str]] = None
     magnitude: Optional[float] = None
     location: Optional[dict] = None
+    visible_from: Optional[str] = "Global"
 
 
 class LearnResponse(BaseModel):

@@ -23,6 +23,7 @@ class CelestialEventResult:
     visible_objects: list[str] | None
     magnitude: float | None
     location: dict | None
+    visible_from: str | None = "Global"
 
 
 class EventsUseCase:
@@ -60,4 +61,5 @@ class EventsUseCase:
             visible_objects=visible_objects,
             magnitude=None,
             location=None,
+            visible_from=event.visible_from or "Global",
         )

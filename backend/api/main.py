@@ -7,6 +7,7 @@ boundary between the backend service and the astronomy engine.
 from __future__ import annotations
 
 import os
+from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -14,9 +15,31 @@ from fastapi.staticfiles import StaticFiles
 from backend.api.routes import router
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Run database schema migration and seed initialization on backend startup."""
+    try:
+        from database.session import DatabaseSessionManager
+        from database.seeds import seed_reference_data
+
+        manager = DatabaseSessionManager()
+        manager.create_all()
+        session = manager.get_session()
+        try:
+            seed_reference_data(session)
+        except Exception:
+            session.rollback()
+        finally:
+            session.close()
+            manager.dispose()
+    except Exception:
+        pass
+    yield
+
+
 def create_app() -> FastAPI:
     """Create an application instance and register API routes and static component mounts."""
-    app = FastAPI(title="Space Observation Intelligence Platform API")
+    app = FastAPI(title="Space Observation Intelligence Platform API", lifespan=lifespan)
     app.include_router(router, prefix="/api")
 
     root_dir = Path(__file__).resolve().parent.parent.parent

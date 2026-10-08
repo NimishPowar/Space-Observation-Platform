@@ -38,12 +38,29 @@ class DatabaseSessionManager:
         return self._session_factory()
 
     def create_all(self) -> None:
-        """Create all ORM tables on the configured engine."""
+        """Create all ORM tables on the configured engine and ensure schema migration."""
+        ensure_schema(self._engine)
         Base.metadata.create_all(bind=self._engine)
 
     def dispose(self) -> None:
         """Dispose pooled database connections."""
         self._engine.dispose()
+
+
+def ensure_schema(engine: Engine) -> None:
+    """Ensure database schema is up-to-date by auto-adding missing columns."""
+    from sqlalchemy import inspect, text
+    try:
+        inspector = inspect(engine)
+        tables = inspector.get_table_names()
+        if "celestial_events" in tables:
+            columns = [c["name"] for c in inspector.get_columns("celestial_events")]
+            if "visible_from" not in columns:
+                with engine.connect() as conn:
+                    conn.execute(text("ALTER TABLE celestial_events ADD COLUMN visible_from VARCHAR(255) DEFAULT 'Global'"))
+                    conn.commit()
+    except Exception:
+        pass
 
 
 def get_session_dependency() -> Generator[Session, None, None]:

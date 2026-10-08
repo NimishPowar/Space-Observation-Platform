@@ -91,6 +91,7 @@ class CelestialEvent(Base):
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     ends_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    visible_from: Mapped[str | None] = mapped_column(String(255), nullable=True, default="Global")
     source_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_recurring: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     planet_id: Mapped[int | None] = mapped_column(ForeignKey("planets.id"), nullable=True)

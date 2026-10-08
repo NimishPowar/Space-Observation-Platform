@@ -21,6 +21,13 @@ class _FakeResponse:
         return self._payload
 
 
+@pytest.fixture(autouse=True)
+def _clear_client_cache():
+    ApiClient.clear_cache()
+    yield
+    ApiClient.clear_cache()
+
+
 def test_api_client_get_json_returns_decoded_payload(monkeypatch: pytest.MonkeyPatch) -> None:
     """Verify the client returns parsed backend JSON for successful requests."""
 
