@@ -84,6 +84,15 @@ class CelestialEventResponse(BaseModel):
     visible_from: Optional[str] = "Global"
 
 
+class AnalyticsResponse(BaseModel):
+    timestamp: str
+    location: dict
+    target_scores: List[dict]
+    category_distribution: dict
+    elevation_trajectories: List[dict]
+    telemetry: dict
+
+
 class LearnResponse(BaseModel):
     object_name: str
     slug: str

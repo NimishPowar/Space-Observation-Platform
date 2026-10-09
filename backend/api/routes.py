@@ -24,6 +24,7 @@ from backend.schemas.models import (
     StarResponse,
     ConstellationResponse,
     SkyMapResponse,
+    AnalyticsResponse,
 )
 from backend.api.dependencies import (
     get_astronomy_use_case,
@@ -31,6 +32,8 @@ from backend.api.dependencies import (
     get_learn_use_case,
     get_nasa_apod_use_case,
     get_observation_planner_use_case,
+    get_analytics_dashboard,
+    get_database_session,
 )
 from backend.use_cases.events_use_case import EventsUseCase
 from backend.use_cases.learn_use_case import LearnUseCase
@@ -313,4 +316,24 @@ def get_apod_by_date(
             detail=f"No APOD entry found for date '{target_date}'.",
         )
     return _serialize(apod)
+
+
+@router.get("/analytics", response_model=AnalyticsResponse)
+def get_analytics(
+    latitude: float = Query(..., ge=-90.0, le=90.0),
+    longitude: float = Query(..., ge=-180.0, le=180.0),
+    timestamp: Optional[str] = Query(None),
+    elevation: Optional[float] = Query(None),
+    dashboard=Depends(get_analytics_dashboard),
+    session=Depends(get_database_session),
+):
+    ts = _parse_timestamp(timestamp)
+    summary = dashboard.generate_summary(
+        latitude=latitude,
+        longitude=longitude,
+        timestamp=ts,
+        elevation=elevation,
+        db_session=session,
+    )
+    return _serialize(summary)
 

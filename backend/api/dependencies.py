@@ -105,3 +105,9 @@ def get_nasa_apod_use_case(
 ) -> NasaApodUseCase:
     """Return a NasaApodUseCase bound to the current database session."""
     return NasaApodUseCase(apod_repository=NasaApodRepository(session))
+
+
+def get_analytics_dashboard() -> AnalyticsDashboard:
+    """Return an AnalyticsDashboard instance bound to the shared astronomy engine."""
+    from analytics.dashboard import AnalyticsDashboard
+    return AnalyticsDashboard(engine=get_engine())

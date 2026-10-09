@@ -13,6 +13,7 @@ if str(_PROJECT_ROOT) not in sys.path:
 import streamlit as st
 
 from frontend.ui import inject_astronomy_styles
+from frontend.pages.analytics import render as render_analytics
 from frontend.pages.discovery import render as render_discovery
 from frontend.pages.explore import render as render_explore
 from frontend.pages.planner import render as render_planner
@@ -23,7 +24,7 @@ def render_top_navbar(pages: dict, current_selection: str) -> str:
     page_keys = list(pages.keys())
     default_index = page_keys.index(current_selection) if current_selection in page_keys else 0
 
-    col1, col2 = st.columns([2, 3])
+    col1, col2 = st.columns([1.8, 3.2])
     with col1:
         st.markdown(
             """
@@ -71,6 +72,7 @@ def run() -> None:
         "🌟 Explore": render_explore,
         "🔭 Planner": render_planner,
         "💡 Discovery": render_discovery,
+        "📊 Analytics": render_analytics,
     }
 
     current = st.session_state.get("selected_page")

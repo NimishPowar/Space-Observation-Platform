@@ -239,6 +239,17 @@ class ApiClient:
             },
         )
 
+    def get_analytics(self, latitude: float = 18.5204, longitude: float = 73.8567, timestamp: str | None = None, elevation: float | None = None) -> dict:
+        return self.get_json(
+            "/analytics",
+            params={
+                "latitude": latitude,
+                "longitude": longitude,
+                "timestamp": timestamp,
+                "elevation": elevation,
+            },
+        )
+
     def get_apod_today(self) -> dict:
         return self.get_json("/apod/today")
 
